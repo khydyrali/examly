@@ -7,6 +7,7 @@ import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 type Option = { label: string; value: string };
 type ChapterRow = { id: number; title: string | null; parent_id: number | null; sort: number | null };
+type RMFilter = { column: string; value: string | number | null | undefined } | { or: string };
 
 export default function ChapterPage() {
   const { supabase } = useSupabase();
@@ -74,9 +75,9 @@ export default function ChapterPage() {
     return [{ label: "All parents", value: "" }, ...parentOptions];
   }, [parentChapters]);
 
-  const resourceFilters = useMemo(() => {
-    const base: { column?: string; value?: string | number | null; or?: string }[] = [
-      { column: "subject_id", value: Number(selectedSubject) },
+  const resourceFilters: RMFilter[] = useMemo(() => {
+    const base: RMFilter[] = [
+      { column: "subject_id", value: selectedSubject ? Number(selectedSubject) : null },
     ];
     if (chapterFilter.startsWith("parent:")) {
       const id = chapterFilter.replace("parent:", "");

@@ -65,7 +65,7 @@ export function ResourceManager({
   const [pageSize, setPageSize] = useState(10);
   const [totalCount, setTotalCount] = useState(0);
   const [search, setSearch] = useState('');
-  const bodyOverflow = useRef<string | undefined>();
+  const bodyOverflow = useRef<string | undefined>(undefined);
   const dialogRef = useRef<HTMLDivElement | null>(null);
 
   const initialForm = useMemo(

@@ -34,11 +34,14 @@ export default function DashboardPage() {
     const run = async () => {
       setLoading(true);
       const rawCache = typeof window !== "undefined" ? localStorage.getItem("subjects_cache") : null;
-      let cachedSubjects: Subject[] | null = null;
+      let cachedSubjects: Subject[] = [];
       if (rawCache) {
         try {
-          cachedSubjects = JSON.parse(rawCache);
-          setSubjects(cachedSubjects);
+          const parsed = JSON.parse(rawCache);
+          if (Array.isArray(parsed)) {
+            cachedSubjects = parsed as Subject[];
+            setSubjects(cachedSubjects);
+          }
         } catch {
           // ignore parse error, will refetch
         }
@@ -48,7 +51,7 @@ export default function DashboardPage() {
         const { count } = await supabase.from(t.table).select("*", { count: "exact", head: true });
         results.push({ table: t.label, count: count ?? 0, color: t.color });
       }
-      const shouldFetchSubjects = !cachedSubjects || cachedSubjects.length === 0;
+      const shouldFetchSubjects = cachedSubjects.length === 0;
       const [{ data: subjectData }, { count: profileCount }] = await Promise.all([
         shouldFetchSubjects ? supabase.from("subject").select("id, name, code, image").order("name", { ascending: true }) : Promise.resolve({ data: null }),
         // Adjust this table name if your user records live elsewhere.

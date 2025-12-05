@@ -54,7 +54,8 @@ export function RichTextEditor({ value, onChange, placeholder, minHeight, onUplo
             "body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 14px; padding: 12px; }",
           images_upload_handler: onUploadImage
             ? async (blobInfo) => {
-                const file = blobInfo.blob();
+                const blob = blobInfo.blob();
+                const file = new File([blob], blobInfo.filename(), { type: blob.type });
                 const url = await onUploadImage(file);
                 if (!url) throw new Error("Image upload failed");
                 return url;
