@@ -1,85 +1,40 @@
-# Study Admin (Next.js + Supabase)
+# FlexPrep — Study Hub (Next.js + Supabase)
 
-Admin UI for managing quizzes, flashcards, and revision notes. Built with Next.js App Router, Tailwind CSS, and Supabase auth + database.
+Modern study/landing experience for IGCSE, AS/A Levels, and AP. Includes Supabase auth with email/password, Google login, signup, and full password reset flow.
 
-## Quick start
-
-1) Copy env vars:
+## Getting started
+1) Copy env vars and fill from Supabase:
 ```
 cp .env.example .env.local
 ```
-Fill `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` from your Supabase project.
+Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
 
-2) Install deps and run:
+2) Install deps and run dev:
 ```
 npm install
 npm run dev
 ```
-Visit `http://localhost:3000`. Use `/login` to sign in with an email/password user from Supabase.
+Visit `http://localhost:3000`.
 
-## Supabase setup
+## Auth + Supabase setup
+- **Email/password & Google**: Enable Google provider in Supabase. Use your site URL as an auth redirect (e.g., `http://localhost:3000` for local). The app uses Supabase client-side auth for login, signup, Google OAuth, and password reset.
+- **Password reset flow**: `/forgot-password` sends a reset link that redirects to `/reset-password`, where users set a new password (`supabase.auth.updateUser`). Ensure the redirect URL is allowed in Supabase.
+- **Env vars**: Keep `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` available. For production, set them in your hosting provider.
 
-Create these tables (plus default `created_at` timestamps and `id uuid primary key default gen_random_uuid()`):
-```sql
--- quizzes
-create table if not exists public.quizzes (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  description text,
-  subject text,
-  difficulty text,
-  tags text,
-  created_at timestamptz default now()
-);
-
--- flashcards
-create table if not exists public.flashcards (
-  id uuid primary key default gen_random_uuid(),
-  front text not null,
-  back text not null,
-  subject text,
-  tags text,
-  created_at timestamptz default now()
-);
-
--- revision notes
-create table if not exists public.revision_notes (
-  id uuid primary key default gen_random_uuid(),
-  title text not null,
-  content text,
-  subject text,
-  tags text,
-  created_at timestamptz default now()
-);
-```
-
-### Auth / RLS
-- Use Supabase email/password auth to sign in.
-- Keep the anon key client-side. Lock tables with RLS so only your admin role/user can read/write:
-```sql
-alter table public.quizzes enable row level security;
-alter table public.flashcards enable row level security;
-alter table public.revision_notes enable row level security;
-
-create policy "Admins can manage quizzes" on public.quizzes for all using (auth.uid() = auth.uid()) with check (auth.uid() = auth.uid());
-create policy "Admins can manage flashcards" on public.flashcards for all using (auth.uid() = auth.uid()) with check (auth.uid() = auth.uid());
-create policy "Admins can manage revision_notes" on public.revision_notes for all using (auth.uid() = auth.uid()) with check (auth.uid() = auth.uid());
-```
-Replace with tighter checks (e.g., restrict to an `is_admin` flag on `auth.users` or a join table).
+## Key routes
+- `/` — landing page focused on study benefits.
+- `/signup` — email/Google signup.
+- `/login` — email/Google login.
+- `/forgot-password` — request reset link.
+- `/reset-password` — set a new password after email link.
+- `/dashboard` — protected content (gated by `AuthGuard`).
 
 ## App structure
-- `app/page.tsx` – landing page.
-- `app/(auth)/login` – Supabase email/password sign-in.
-- `app/(protected)/layout.tsx` – session guard + top nav.
-- `app/(protected)/dashboard` – CRUD panels for quizzes, flashcards, revision notes.
-- `components/providers/SupabaseProvider` – supabase client + session context.
-- `components/admin/ResourceManager` – reusable CRUD widget per table.
+- `app/page.tsx` — landing page.
+- `app/(auth)/*` — auth flows (login, signup, forgot password, reset password).
+- `app/(protected)/*` — gated content with `AuthGuard`.
+- `components/providers/SupabaseProvider` — Supabase client/session context.
 
-## Usage notes
-- The dashboard runs client-side CRUD against Supabase. Ensure RLS allows your signed-in admin user.
-- To change fields, edit the `fields` config in `app/(protected)/dashboard/page.tsx`.
-- To add more resource types, reuse `ResourceManager` with a new table and field list.
-
-## Scripts
-- `npm run dev` – start dev server
-- `npm run lint` – lint with next/eslint
+## Notes
+- Lock down your Supabase tables with RLS to the roles/users you want.
+- Update CTA links or copy to fit your brand; visuals are intentionally concise and study-focused. 
