@@ -111,6 +111,7 @@ export default function StudentNotePage() {
   const [subjects, setSubjects] = useState<Option[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
+  const [subjectsLoaded, setSubjectsLoaded] = useState(false);
 
   const [chapters, setChapters] = useState<ChapterRow[]>([]);
   const [openParents, setOpenParents] = useState<Record<number, boolean>>({});
@@ -122,9 +123,13 @@ export default function StudentNotePage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
-    if (stored) {
-      setSelectedSubject(stored);
+    const storedId = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
+    const storedLabel = typeof window !== "undefined" ? localStorage.getItem("subject_label") : null;
+    if (storedId) {
+      setSelectedSubject(storedId);
+      if (storedLabel) {
+        setSelectedSubjectName(storedLabel);
+      }
     }
   }, []);
 
@@ -140,7 +145,11 @@ export default function StudentNotePage() {
       const match = (subjectData ?? []).find((s) => String(s.id) === selectedSubject);
       if (match) {
         setSelectedSubjectName(match.code ? `${match.code} - ${match.name ?? ""}`.trim() : match.name ?? String(match.id));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("subject_label", match.code ? `${match.code} - ${match.name ?? ""}`.trim() : match.name ?? String(match.id));
+        }
       }
+      setSubjectsLoaded(true);
     };
     void loadSubjects();
   }, [selectedSubject, supabase]);
@@ -257,6 +266,9 @@ export default function StudentNotePage() {
     setActiveChapterId(id);
   };
 
+  const subjectLabel =
+    selectedSubjectName || (selectedSubject && !subjectsLoaded ? "Loading subject..." : selectedSubject ? "Subject" : "");
+
   if (!selectedSubject) {
     return (
       <div className="space-y-4">
@@ -273,8 +285,11 @@ export default function StudentNotePage() {
               onChange={(event) => {
                 const value = event.target.value;
                 if (!value) return;
+                const label = subjects.find((s) => s.value === value)?.label;
                 localStorage.setItem("subject_id", value);
+                if (label) localStorage.setItem("subject_label", label);
                 setSelectedSubject(value);
+                if (label) setSelectedSubjectName(label);
               }}
             >
               <option value="">Select subject</option>
@@ -301,7 +316,7 @@ export default function StudentNotePage() {
     <div className="space-y-4">
       <div className="space-y-1">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
-          {selectedSubjectName ? `${selectedSubjectName} notes` : "Student notes"}
+          {subjectLabel ? `${subjectLabel} notes` : "Student notes"}
         </h1>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
@@ -311,7 +326,7 @@ export default function StudentNotePage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{selectedSubjectName || "Select a subject"}</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
             </div>
             <button
               type="button"
@@ -394,7 +409,7 @@ export default function StudentNotePage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
-                <span>{selectedSubjectName || "Notes"}</span>
+                <span>{subjectLabel || "Notes"}</span>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-600 dark:text-gray-400">{activeChapterTitle}</span>
               </div>

@@ -18,6 +18,11 @@ export default function QuizPage() {
   const [years, setYears] = useState<Option[]>([]);
   const [seasons, setSeasons] = useState<Option[]>([]);
   const [papers, setPapers] = useState<Option[]>([]);
+  const [selectedYear, setSelectedYear] = useState<string>("");
+  const [selectedSeason, setSelectedSeason] = useState<string>("");
+  const [selectedPaper, setSelectedPaper] = useState<string>("");
+  const [selectedType, setSelectedType] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
   const router = useRouter();
@@ -72,6 +77,25 @@ export default function QuizPage() {
     [chapters, selectedParent],
   );
 
+  const filters = useMemo(() => {
+    const list: { column: string; value: string | number | null }[] = [
+      { column: "subject_id", value: Number(selectedSubject) },
+      selectedChild ? { column: "chapter_id", value: Number(selectedChild) } : { column: "chapter_id", value: null },
+    ];
+
+    if (selectedYear) list.push({ column: "year", value: selectedYear });
+    if (selectedSeason) list.push({ column: "season_id", value: Number(selectedSeason) });
+    if (selectedPaper) list.push({ column: "paper", value: selectedPaper });
+    if (selectedType) list.push({ column: "type", value: selectedType });
+
+    return list;
+  }, [selectedChild, selectedPaper, selectedSeason, selectedSubject, selectedType, selectedYear]);
+
+  const orderBy = useMemo(
+    () => [{ column: "id", ascending: sortOrder === "asc" ? true : false }],
+    [sortOrder],
+  );
+
   if (!selectedSubject) {
     return null;
   }
@@ -119,16 +143,84 @@ export default function QuizPage() {
             ))}
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Year</span>
+          <select
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="">All years</option>
+            {years.map((y) => (
+              <option key={y.value} value={y.value}>
+                {y.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Season</span>
+          <select
+            value={selectedSeason}
+            onChange={(e) => setSelectedSeason(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="">All seasons</option>
+            {seasons.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Paper</span>
+          <select
+            value={selectedPaper}
+            onChange={(e) => setSelectedPaper(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="">All papers</option>
+            {papers.map((p) => (
+              <option key={p.value} value={p.value}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Type</span>
+          <select
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="">All types</option>
+            <option value="mcq">MCQ</option>
+            <option value="frq">FRQ</option>
+          </select>
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Sort</span>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value === "asc" ? "asc" : "desc")}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
+          </select>
+        </label>
       </div>
       <ResourceManager
         title="Quizzes"
         singular="Quiz"
         table="quiz"
+        orderBy={orderBy}
+        select="*, chapter:chapter_id(title), season:season_id(name)"
+        searchColumns={["question", "mcq1", "mcq2", "mcq3", "mcq4", "mcq_answer"]}
         description="Store quiz prompts and MCQs."
-        filters={[
-          { column: "subject_id", value: Number(selectedSubject) },
-          selectedChild ? { column: "chapter_id", value: Number(selectedChild) } : { column: "chapter_id", value: null },
-        ]}
+        filters={filters}
         initialValues={{ subject_id: selectedSubject, chapter_id: selectedChild }}
         disabledFields={["subject_id"]}
         fields={[
@@ -170,6 +262,23 @@ export default function QuizPage() {
           { key: "parent_id", label: "Parent ID", placeholder: "Optional parent", type: "number" },
         ]}
         displayFields={[
+          { key: "num", label: "Q#", columnClassName: "w-12" },
+          { key: "type", label: "Type", columnClassName: "w-16 uppercase" },
+          { key: "chapter", label: "Chapter", columnClassName: "w-40", render: (item) => (item.chapter as { title?: string } | undefined)?.title ?? "" },
+          {
+            key: "exam_meta",
+            label: "Exam",
+            columnClassName: "w-40 whitespace-nowrap",
+            render: (item) => {
+              const seasonName = (item.season as { name?: string } | undefined)?.name;
+              const seasonValue = seasonName || item.season_id || "";
+              const year = item.year || "";
+              const paper = item.paper || "";
+
+              const parts = [year, seasonValue, paper].filter(Boolean);
+              return parts.join(" • ");
+            },
+          },
           {
             key: "question",
             label: "Question",
@@ -179,6 +288,7 @@ export default function QuizPage() {
           { key: "mcq2", label: "MCQ B", columnClassName: "max-w-[260px] whitespace-pre-wrap break-words overflow-hidden max-h-20" },
           { key: "mcq3", label: "MCQ C", columnClassName: "max-w-[260px] whitespace-pre-wrap break-words overflow-hidden max-h-20" },
           { key: "mcq4", label: "MCQ D", columnClassName: "max-w-[260px] whitespace-pre-wrap break-words overflow-hidden max-h-20" },
+          { key: "mcq_answer", label: "Answer", columnClassName: "w-16 font-semibold" },
         ]}
       />
     </div>

@@ -16,12 +16,13 @@ type FieldConfig = {
   colSpan?: 1 | 2 | 3 | 4;
   disabled?: boolean;
   editorMinHeight?: number;
+  render?: (item: Resource) => React.ReactNode;
 };
 
 type Resource = {
   id: string | number;
   created_at?: string;
-} & Record<string, string | number | boolean | null | undefined>;
+} & Record<string, unknown>;
 
 type Filter =
   | { column: string; value: string | number | null | undefined }
@@ -32,6 +33,8 @@ type Props = {
   singular?: string;
   table: string;
   fields: FieldConfig[];
+  select?: string;
+  orderBy?: { column: string; ascending?: boolean }[];
   displayFields?: FieldConfig[];
   description?: string;
   filters?: Filter[];
@@ -39,6 +42,7 @@ type Props = {
   disabledFields?: string[];
   fieldGridClassName?: string;
   dialogClassName?: string;
+  searchColumns?: string[];
 };
 
 export function ResourceManager({
@@ -46,6 +50,8 @@ export function ResourceManager({
   singular,
   table,
   fields,
+  select,
+  orderBy,
   displayFields,
   description,
   filters,
@@ -53,6 +59,7 @@ export function ResourceManager({
   disabledFields,
   fieldGridClassName,
   dialogClassName,
+  searchColumns,
 }: Props) {
   const { supabase } = useSupabase();
   const [items, setItems] = useState<Resource[]>([]);
@@ -88,22 +95,41 @@ export function ResourceManager({
     setPage(1);
   }, [filterKey]);
 
+  const selectKey = select ?? '*';
+  const orderKey = JSON.stringify(orderBy ?? []);
+
   const searchFilter = useMemo(() => {
     if (!search.trim()) return null;
-    const searchable = fields
-      .filter((f) => f.type !== 'number' && f.type !== 'checkbox')
-      .map((f) => `${f.key}.ilike.%${search}%`);
+    const searchable =
+      searchColumns && searchColumns.length
+        ? searchColumns.map((c) => `${c}.ilike.%${search}%`)
+        : fields
+            .filter((f) => f.type !== 'number' && f.type !== 'checkbox')
+            .map((f) => `${f.key}.ilike.%${search}%`);
     return searchable.length ? searchable.join(',') : null;
-  }, [fields, search]);
+  }, [fields, search, searchColumns]);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
 
+    let query = supabase.from(table).select(selectKey, { count: 'exact' });
     const hasSort = fields.some((f) => f.key === 'sort');
-    let query = supabase.from(table).select('*', { count: 'exact' });
-    query = hasSort ? query.order('sort', { ascending: true }).order('created_at', { ascending: false }) : query.order('created_at', { ascending: false });
+    const orders =
+      orderBy && orderBy.length > 0
+        ? orderBy
+        : hasSort
+          ? [
+              { column: 'sort', ascending: true },
+              { column: 'created_at', ascending: false },
+            ]
+          : [{ column: 'created_at', ascending: false }];
+
+    orders.forEach((o) => {
+      query = query.order(o.column, { ascending: o.ascending ?? true });
+    });
+
     query = query.range(from, to);
     (filters ?? []).forEach((f) => {
       if ("or" in f) {
@@ -124,11 +150,12 @@ export function ResourceManager({
       setItems([]);
       setTotalCount(0);
     } else {
-      setItems(data ?? []);
-      setTotalCount(count ?? 0);
+      const safeData: Resource[] = Array.isArray(data) ? (data as unknown as Resource[]) : [];
+      setItems(safeData);
+      setTotalCount(count ?? safeData.length ?? 0);
     }
     setLoading(false);
-  }, [page, pageSize, searchFilter, supabase, table, filterKey]);
+  }, [page, pageSize, searchFilter, supabase, table, filterKey, orderKey, selectKey]);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -196,10 +223,23 @@ export function ResourceManager({
     }, {});
 
     if (editingId) {
-      const { error: updateError } = await supabase.from(table).update(payload).eq('id', editingId);
+      const { error: updateError, data: updatedRows } = await supabase
+        .from(table)
+        .update(payload)
+        .eq('id', editingId)
+        .select(selectKey)
+        .maybeSingle();
+
       if (updateError) {
         setError(updateError.message);
+      } else if (updatedRows) {
+        const updated = updatedRows as unknown as Resource;
+        setItems((prev) =>
+          prev.map((item) => (String(item.id) === editingId ? { ...item, ...updated } : item)),
+        );
+        closeDialog();
       } else {
+        // If no row returned, fall back to fetch.
         await fetchItems();
         closeDialog();
       }
@@ -313,14 +353,34 @@ export function ResourceManager({
               ) : (
                 items.map((item) => (
                   <tr key={item.id}>
-                    {tableFields.map((field) => (
-                      <td
-                        key={field.key}
-                        className={`px-4 py-3 align-top text-sm text-gray-800 dark:text-gray-100 ${field.columnClassName ?? ''}`}
-                      >
-                        {field.type === 'checkbox' ? (item[field.key] ? 'Yes' : 'No') : item[field.key] ?? ''}
-                      </td>
-                    ))}
+                    {tableFields.map((field) => {
+                      const rawValue = item[field.key];
+                      const renderVal = field.render
+                        ? field.render(item)
+                        : field.type === 'checkbox'
+                          ? (rawValue ? 'Yes' : 'No')
+                          : rawValue ?? '';
+
+                      let displayValue: React.ReactNode;
+                      if (renderVal === null || renderVal === undefined) {
+                        displayValue = '';
+                      } else if (typeof renderVal === 'boolean') {
+                        displayValue = renderVal ? 'Yes' : 'No';
+                      } else if (typeof renderVal === 'string' || typeof renderVal === 'number') {
+                        displayValue = renderVal;
+                      } else {
+                        displayValue = String(renderVal);
+                      }
+
+                      return (
+                        <td
+                          key={field.key}
+                          className={`px-4 py-3 align-top text-sm text-gray-800 dark:text-gray-100 ${field.columnClassName ?? ''}`}
+                        >
+                          {displayValue}
+                        </td>
+                      );
+                    })}
                     <td className="px-4 py-3 text-right text-sm">
                       <div className="inline-flex gap-2">
                         <button
@@ -406,13 +466,28 @@ export function ResourceManager({
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Fill out the fields and save.</p>
                 </div>
-                <button
-                  onClick={closeDialog}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-lg font-bold text-gray-600 shadow-sm transition hover:scale-105 hover:border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-200 dark:hover:border-gray-600"
-                  aria-label="Close dialog"
-                >
-                  &times;
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={closeDialog}
+                    className="rounded-md border border-gray-300 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-200 dark:hover:bg-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-60"
+                  >
+                    {saving ? 'Saving...' : editingId ? 'Update' : 'Add'}
+                  </button>
+                  <button
+                    onClick={closeDialog}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-lg font-bold text-gray-600 shadow-sm transition hover:scale-105 hover:border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-200 dark:hover:border-gray-600"
+                    aria-label="Close dialog"
+                  >
+                    &times;
+                  </button>
+                </div>
               </div>
 
               <div className={fieldGridClassName ?? "mt-4 grid gap-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}>

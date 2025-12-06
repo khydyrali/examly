@@ -118,10 +118,12 @@ export default function StudentQuizPage() {
   const [subjects, setSubjects] = useState<Option[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
+  const [subjectsLoaded, setSubjectsLoaded] = useState(false);
 
   const [chapters, setChapters] = useState<ChapterRow[]>([]);
   const [openParents, setOpenParents] = useState<Record<number, boolean>>({});
   const [activeChapterId, setActiveChapterId] = useState<number | null>(null);
+  const [chapterFilter, setChapterFilter] = useState<number | null>(null);
 
   const [quizzes, setQuizzes] = useState<QuizRow[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -131,9 +133,13 @@ export default function StudentQuizPage() {
   const [showAnswer, setShowAnswer] = useState(false);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
-    if (stored) {
-      setSelectedSubject(stored);
+    const storedId = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
+    const storedLabel = typeof window !== "undefined" ? localStorage.getItem("subject_label") : null;
+    if (storedId) {
+      setSelectedSubject(storedId);
+      if (storedLabel) {
+        setSelectedSubjectName(storedLabel);
+      }
     }
   }, []);
 
@@ -148,11 +154,16 @@ export default function StudentQuizPage() {
       );
       const match = (subjectData ?? []).find((s) => String(s.id) === selectedSubject);
       if (match) {
-        setSelectedSubjectName(match.code ? `${match.code} - ${match.name ?? ""}`.trim() : match.name ?? String(match.id));
+        const label = match.code ? `${match.code} - ${match.name ?? ""}`.trim() : match.name ?? String(match.id);
+        setSelectedSubjectName(label);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("subject_label", label);
+        }
       }
+      setSubjectsLoaded(true);
     };
     void loadSubjects();
-  }, [selectedSubject, supabase]);
+  }, [selectedSubject, supabase, chapterFilter]);
 
   useEffect(() => {
     if (!selectedSubject) return;
@@ -172,19 +183,27 @@ export default function StudentQuizPage() {
           .order("parent_id", { ascending: true })
           .order("sort", { ascending: true })
           .order("title", { ascending: true }),
-        supabase
-          .from("quiz")
-          .select("id, chapter_id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year, season_id, paper")
-          .eq("subject_id", subjectId)
-          .order("chapter_id", { ascending: true })
-          .order("num", { ascending: true })
-          .order("id", { ascending: true }),
+        (() => {
+          let query = supabase
+            .from("quiz")
+            .select("id, chapter_id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year, season_id, paper")
+            .eq("subject_id", subjectId)
+            .order("chapter_id", { ascending: true })
+            .order("num", { ascending: true })
+            .order("id", { ascending: true });
+
+          if (chapterFilter !== null) {
+            query = query.eq("chapter_id", chapterFilter);
+          }
+
+          return query;
+        })(),
       ]);
 
       if (!isMounted) return;
 
       if (chapterError || quizError) {
-        setError(chapterError?.message ?? quizError?.message ?? "Unable to load quizzes.");
+        setError(chapterError?.message ?? quizError?.message ?? "Unable to load exam topical questions.");
       }
 
       setChapters((chapterData as ChapterRow[]) ?? []);
@@ -222,7 +241,7 @@ export default function StudentQuizPage() {
     setCurrentIndex(0);
     setSelectedChoice(null);
     setShowAnswer(false);
-  }, [activeChapterId, quizzes]);
+  }, [chapterFilter, quizzes]);
 
   const chapterTree = useMemo<ChapterNode[]>(() => {
     const sorted = [...chapters].sort((a, b) => {
@@ -252,12 +271,25 @@ export default function StudentQuizPage() {
     }));
   }, [chapters]);
 
+  const chapterFilterIds = useMemo(() => {
+    if (chapterFilter === null) return null;
+    const selected = chapters.find((c) => c.id === chapterFilter);
+    if (!selected) return [chapterFilter];
+    if (!selected.parent_id) {
+      const childIds = chapters.filter((c) => c.parent_id === chapterFilter).map((c) => c.id);
+      return [chapterFilter, ...childIds];
+    }
+    return [chapterFilter];
+  }, [chapterFilter, chapters]);
+
   const filteredQuizzes = useMemo(() => {
-    if (!activeChapterId) return quizzes;
-    return quizzes.filter((q) => q.chapter_id === activeChapterId);
-  }, [activeChapterId, quizzes]);
+    if (!chapterFilterIds || chapterFilterIds.length === 0) return quizzes;
+    return quizzes.filter((q) => (q.chapter_id ? chapterFilterIds.includes(q.chapter_id) : false));
+  }, [chapterFilterIds, quizzes]);
 
   const currentQuiz = filteredQuizzes[currentIndex];
+  const subjectLabel =
+    selectedSubjectName || (selectedSubject && !subjectsLoaded ? "Loading subject..." : selectedSubject ? "Subject" : "");
 
   const activeChapterTitle = useMemo(() => {
     if (!activeChapterId) return "All chapters";
@@ -268,6 +300,7 @@ export default function StudentQuizPage() {
   const toggleParent = (id: number) => {
     setOpenParents((prev) => ({ ...prev, [id]: !prev[id] }));
     setActiveChapterId(id);
+    setChapterFilter(id);
   };
 
   const answerOptions = currentQuiz
@@ -283,8 +316,8 @@ export default function StudentQuizPage() {
     return (
       <div className="space-y-4">
         <div className="space-y-1">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Student Quizzes</p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Select a subject to view quizzes</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Exam Topical</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Select a subject to view exam topical sets</h1>
           <p className="text-sm text-gray-600 dark:text-gray-400">Choose a subject below or go back to the dashboard to pick one.</p>
         </div>
         <div className="rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
@@ -295,8 +328,11 @@ export default function StudentQuizPage() {
               onChange={(event) => {
                 const value = event.target.value;
                 if (!value) return;
+                const label = subjects.find((s) => s.value === value)?.label;
                 localStorage.setItem("subject_id", value);
+                if (label) localStorage.setItem("subject_label", label);
                 setSelectedSubject(value);
+                if (label) setSelectedSubjectName(label);
               }}
             >
               <option value="">Select subject</option>
@@ -323,7 +359,7 @@ export default function StudentQuizPage() {
     <div className="space-y-4">
       <div className="space-y-1">
         <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
-          {selectedSubjectName ? `${selectedSubjectName} quizzes` : "Student quizzes"}
+          {subjectLabel ? `${subjectLabel} exam topical` : "Exam topical"}
         </h1>
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
       </div>
@@ -333,11 +369,14 @@ export default function StudentQuizPage() {
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{selectedSubjectName || "Select a subject"}</div>
+              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
             </div>
             <button
               type="button"
-              onClick={() => setActiveChapterId(null)}
+              onClick={() => {
+                setActiveChapterId(null);
+                setChapterFilter(null);
+              }}
               className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition ${
                 activeChapterId === null
                   ? "bg-blue-600 text-white"
@@ -379,7 +418,10 @@ export default function StudentQuizPage() {
                     >
                       <button
                         type="button"
-                        onClick={() => setActiveChapterId(parent.id)}
+                        onClick={() => {
+                          setActiveChapterId(parent.id);
+                          setChapterFilter(parent.id);
+                        }}
                         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
                           activeChapterId === parent.id
                             ? "bg-blue-600 text-white shadow-sm"
@@ -393,10 +435,13 @@ export default function StudentQuizPage() {
                         <button
                           key={child.id}
                           type="button"
-                          onClick={() => setActiveChapterId(child.id)}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
-                            activeChapterId === child.id
-                              ? "bg-blue-600 text-white shadow-sm"
+                          onClick={() => {
+                            setActiveChapterId(child.id);
+                            setChapterFilter(child.id);
+                          }}
+                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                          activeChapterId === child.id
+                            ? "bg-blue-600 text-white shadow-sm"
                               : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
                           }`}
                         >
@@ -416,7 +461,7 @@ export default function StudentQuizPage() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
-                <span>{selectedSubjectName || "Quizzes"}</span>
+                <span>{subjectLabel || "Exam Topical"}</span>
                 <span className="text-gray-400">/</span>
                 <span className="text-gray-600 dark:text-gray-400">{activeChapterTitle}</span>
               </div>

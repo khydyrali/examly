@@ -15,6 +15,7 @@ export default function NotePage() {
   const [parentChapters, setParentChapters] = useState<Option[]>([]);
   const [selectedParent, setSelectedParent] = useState<string>("");
   const [selectedChild, setSelectedChild] = useState<string>("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
   const router = useRouter();
@@ -66,6 +67,11 @@ export default function NotePage() {
     [chapters, selectedParent],
   );
 
+  const orderBy = useMemo(
+    () => [{ column: "id", ascending: sortOrder === "asc" ? true : false }],
+    [sortOrder],
+  );
+
   if (!selectedSubject) {
     return null;
   }
@@ -113,11 +119,23 @@ export default function NotePage() {
             ))}
           </select>
         </label>
+        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
+          <span className="font-medium">Sort</span>
+          <select
+            value={sortOrder}
+            onChange={(e) => setSortOrder(e.target.value === "asc" ? "asc" : "desc")}
+            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+          >
+            <option value="desc">Newest first</option>
+            <option value="asc">Oldest first</option>
+          </select>
+        </label>
       </div>
       <ResourceManager
         title="Notes"
         singular="Note"
         table="note"
+        orderBy={orderBy}
         description="Notes by chapter."
         displayFields={[
           { key: "title", label: "Title" },

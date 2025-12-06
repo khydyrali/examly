@@ -20,7 +20,13 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
       throw new Error('Missing Supabase env vars. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.');
     }
 
-    return createClient(url, anonKey);
+    return createClient(url, anonKey, {
+      auth: {
+        storageKey: 'flex-admin-auth',
+        persistSession: true,
+        autoRefreshToken: true,
+      },
+    });
   }, []);
 
   const [session, setSession] = useState<Session | null>(null);
@@ -29,15 +35,34 @@ export function SupabaseProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let mounted = true;
 
-    supabase.auth.getSession().then(({ data }) => {
+    const syncSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
       if (!mounted) return;
+
+      if (error) {
+        console.warn('Resetting Supabase session after refresh error', error);
+        await supabase.auth.signOut();
+        setSession(null);
+        setIsReady(true);
+        return;
+      }
+
       setSession(data.session ?? null);
       setIsReady(true);
-    });
+    };
 
-    const {
-      data: authListener,
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    syncSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mounted) return;
+
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setIsReady(true);
+        return;
+      }
+
       setSession(newSession);
       setIsReady(true);
     });
