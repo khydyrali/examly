@@ -21,7 +21,6 @@ export default function QuizPage() {
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedSeason, setSelectedSeason] = useState<string>("");
   const [selectedPaper, setSelectedPaper] = useState<string>("");
-  const [selectedType, setSelectedType] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
@@ -86,10 +85,8 @@ export default function QuizPage() {
     if (selectedYear) list.push({ column: "year", value: selectedYear });
     if (selectedSeason) list.push({ column: "season_id", value: Number(selectedSeason) });
     if (selectedPaper) list.push({ column: "paper", value: selectedPaper });
-    if (selectedType) list.push({ column: "type", value: selectedType });
-
     return list;
-  }, [selectedChild, selectedPaper, selectedSeason, selectedSubject, selectedType, selectedYear]);
+  }, [selectedChild, selectedPaper, selectedSeason, selectedSubject, selectedYear]);
 
   const orderBy = useMemo(
     () => [{ column: "id", ascending: sortOrder === "asc" ? true : false }],
@@ -189,18 +186,6 @@ export default function QuizPage() {
           </select>
         </label>
         <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-          <span className="font-medium">Type</span>
-          <select
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value)}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
-          >
-            <option value="">All types</option>
-            <option value="mcq">MCQ</option>
-            <option value="frq">FRQ</option>
-          </select>
-        </label>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
           <span className="font-medium">Sort</span>
           <select
             value={sortOrder}
@@ -226,16 +211,6 @@ export default function QuizPage() {
         fields={[
           { key: "chapter_id", label: "Chapter", placeholder: "Select chapter", type: "select", options: childChapters, asNumber: true },
           { key: "subject_id", label: "Subject", placeholder: "Select subject", type: "select", options: subjects, asNumber: true },
-          {
-            key: "type",
-            label: "Type",
-            type: "select",
-            options: [
-              { label: "MCQ", value: "mcq" },
-              { label: "FRQ", value: "frq" },
-            ],
-            placeholder: "Select type",
-          },
           { key: "question", label: "Question", placeholder: "Enter question text", type: "richtext", colSpan: 4, editorMinHeight: 200 },
           { key: "mcq1", label: "MCQ A", placeholder: "Option A", type: "textarea" },
           { key: "mcq2", label: "MCQ B", placeholder: "Option B", type: "textarea" },
@@ -259,11 +234,9 @@ export default function QuizPage() {
           { key: "year", label: "Year", placeholder: "Select year", type: "select", options: years },
           { key: "season_id", label: "Season", placeholder: "Select season", type: "select", options: seasons, asNumber: true },
           { key: "paper", label: "Paper", placeholder: "Select paper", type: "select", options: papers },
-          { key: "parent_id", label: "Parent ID", placeholder: "Optional parent", type: "number" },
         ]}
         displayFields={[
           { key: "num", label: "Q#", columnClassName: "w-12" },
-          { key: "type", label: "Type", columnClassName: "w-16 uppercase" },
           { key: "chapter", label: "Chapter", columnClassName: "w-40", render: (item) => (item.chapter as { title?: string } | undefined)?.title ?? "" },
           {
             key: "exam_meta",

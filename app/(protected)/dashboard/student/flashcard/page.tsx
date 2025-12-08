@@ -11,7 +11,7 @@ type ChapterNode = { id: number; title: string; children: ChapterNode[] };
 
 function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped: boolean; onFlip: () => void }) {
   return (
-    <div className="group relative h-72 w-full cursor-pointer [perspective:1200px]" onClick={onFlip} role="button" tabIndex={0} onKeyDown={(event) => {
+    <div className="group relative h-88 w-full cursor-pointer [perspective:1400px]" onClick={onFlip} role="button" tabIndex={0} onKeyDown={(event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
         onFlip();
@@ -22,7 +22,7 @@ function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped:
           flipped ? "[transform:rotateY(180deg)]" : ""
         }`}
       >
-        <div className="absolute inset-0 flex flex-col gap-3 rounded-2xl px-5 py-4 [backface-visibility:hidden]">
+        <div className="absolute inset-0 flex flex-col gap-4 rounded-2xl px-6 py-5 [backface-visibility:hidden]">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-blue-600">
             <span>Front</span>
             <span className="text-[10px] text-gray-500 dark:text-gray-400">Click to flip</span>
@@ -34,7 +34,7 @@ function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped:
           </div>
         </div>
 
-        <div className="absolute inset-0 flex flex-col gap-3 rounded-2xl px-5 py-4 [backface-visibility:hidden] [transform:rotateY(180deg)]">
+        <div className="absolute inset-0 flex flex-col gap-4 rounded-2xl px-6 py-5 [backface-visibility:hidden] [transform:rotateY(180deg)]">
           <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-emerald-600">
             <span>Back</span>
             <span className="text-[10px] text-gray-500 dark:text-gray-400">Click to flip</span>
@@ -295,7 +295,7 @@ export default function StudentFlashcardPage() {
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <aside className="sticky top-4 h-fit max-h-[80vh] w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:w-[360px]">
+        <aside className="sticky top-4 h-fit max-h-[80vh] w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:w-[420px]">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Flashcards</p>
@@ -433,7 +433,7 @@ export default function StudentFlashcardPage() {
                 No flashcards for this selection yet.
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="mx-auto w-full max-w-4xl space-y-4">
                 <FlashcardCard card={currentCard} flipped={!!flippedCards[currentCard.id]} onFlip={() => toggleFlip(currentCard.id)} />
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button

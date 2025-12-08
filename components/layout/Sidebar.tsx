@@ -11,7 +11,8 @@ const navSections = [
       { href: "/dashboard", label: "Dashboard", icon: "🧭" },
       { href: "/dashboard/note", label: "Notes", icon: "🗒" },
       { href: "/dashboard/flashcard", label: "Flashcards", icon: "🧠" },
-      { href: "/dashboard/quiz", label: "Quizzes", icon: "🎯" },
+      { href: "/dashboard/quiz", label: "Quiz MCQ", icon: "🎯" },
+      { href: "/dashboard/quiz-frq", label: "Quiz FRQ", icon: "📝" },
       { href: "/dashboard/chapter", label: "Chapters", icon: "🗂" },
     ],
   },
@@ -76,7 +77,9 @@ export function Sidebar() {
             ) : null}
             <div className="mt-2 space-y-1">
               {section.items.map((item) => {
-                const active = item.href === "/dashboard" ? pathname === item.href : pathname?.startsWith(item.href);
+                const isExact = pathname === item.href;
+                const isChild = pathname?.startsWith(`${item.href}/`);
+                const active = item.href === "/dashboard" ? isExact : isExact || isChild;
                 return (
                   <Link
                     key={item.href}
