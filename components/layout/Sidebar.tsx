@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 
 type IconName =
   | "home"
@@ -18,7 +18,7 @@ type IconName =
   | "past-paper"
   | "lesson";
 
-const icons: Record<IconName, JSX.Element> = {
+const icons: Record<IconName, ReactNode> = {
   home: (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5">
       <path d="M3 11 12 4l9 7v8a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" strokeLinecap="round" strokeLinejoin="round" />
