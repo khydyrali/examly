@@ -131,6 +131,7 @@ export default function StudentQuizPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
+  const [showChapterModal, setShowChapterModal] = useState(false);
 
   useEffect(() => {
     const storedId = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
@@ -356,16 +357,19 @@ export default function StudentQuizPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
-          {subjectLabel ? `${subjectLabel} exam topical` : "Exam topical"}
-        </h1>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      </div>
+    <div className="space-y-1">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start">
-        <aside className="sticky top-4 z-20 w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:w-[360px] max-h-[calc(100vh-32px)] overflow-y-auto">
+        <button
+          type="button"
+          onClick={() => setShowChapterModal(true)}
+          className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-100 lg:hidden"
+        >
+          Chapters
+        </button>
+
+        <aside className="sticky top-4 z-20 hidden w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:block lg:w-[360px] max-h-[calc(100vh-32px)] overflow-y-auto">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
@@ -416,21 +420,6 @@ export default function StudentQuizPage() {
                     <div
                       className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
                     >
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveChapterId(parent.id);
-                          setChapterFilter(parent.id);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition ${
-                          activeChapterId === parent.id
-                            ? "bg-blue-600 text-white shadow-sm"
-                            : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
-                        }`}
-                      >
-                        <span>Study parent</span>
-                        <span className="text-[11px] text-gray-500 dark:text-gray-400">All topics</span>
-                      </button>
                       {parent.children.map((child) => (
                         <button
                           key={child.id}
@@ -517,7 +506,7 @@ export default function StudentQuizPage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Question</p>
                     <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
                       {currentQuiz.num ? `Q${currentQuiz.num}` : "Question"}{" "}
-                      {currentQuiz.year ? `• ${currentQuiz.year}` : ""} {currentQuiz.paper ? `• Paper ${currentQuiz.paper}` : ""}
+                      {currentQuiz.year ? `| ${currentQuiz.year}` : ""} {currentQuiz.paper ? `| Paper ${currentQuiz.paper}` : ""}
                     </h3>
                   </div>
                   {currentQuiz.mcq_answer && showAnswer ? (
@@ -593,6 +582,81 @@ export default function StudentQuizPage() {
           )}
         </section>
       </div>
+
+      {showChapterModal ? (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 lg:hidden">
+          <div className="mt-8 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-neutral-950">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowChapterModal(false)}
+                className="h-9 w-9 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-200"
+              >
+                X
+              </button>
+            </div>
+            <div className="h-[60vh] overflow-y-auto">
+              <div className="space-y-3">
+                {chapterTree.length === 0 ? (
+                  <p className="px-1 text-sm text-gray-600 dark:text-gray-400">No chapters found for this subject yet.</p>
+                ) : null}
+                {chapterTree.map((parent) => {
+                  const isOpen = openParents[parent.id];
+                  const isActive = activeChapterId === parent.id;
+                  return (
+                    <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+                      <button
+                        type="button"
+                        onClick={() => toggleParent(parent.id)}
+                        className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
+                          isActive
+                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
+                            : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="line-clamp-1">{parent.title}</span>
+                          <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
+                            {parent.children.length} topics
+                          </span>
+                        </div>
+                        <span className={`text-xs transition ${isOpen ? "rotate-90" : ""}`}>&gt;</span>
+                      </button>
+                      <div
+                        className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
+                      >
+                        {parent.children.map((child) => (
+                          <button
+                            key={child.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveChapterId(child.id);
+                              setChapterFilter(child.id);
+                              setShowChapterModal(false);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                              activeChapterId === child.id
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
+                            }`}
+                          >
+                            <span className="line-clamp-1">{child.title}</span>
+                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -246,7 +246,7 @@ export default function StudentPastPaperPage() {
     if (!currentQuiz) return "";
     const seasonName = currentQuiz.season?.name ?? currentQuiz.season_id ?? "";
     const parts = [currentQuiz.year, seasonName, currentQuiz.paper ? `Paper ${currentQuiz.paper}` : ""].filter(Boolean);
-    return parts.join(" • ");
+    return parts.join(" | ");
   }, [currentQuiz]);
 
   if (!selectedSubject) {
@@ -293,15 +293,10 @@ export default function StudentPastPaperPage() {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="space-y-1">
-        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-50">
-          {subjectLabel ? `${subjectLabel} exam past papers` : "Exam past papers"}
-        </h1>
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-      </div>
+    <div className="space-y-2">
+      {error ? <p className="text-sm text-red-600">{error}</p> : null}
 
-      <div className="space-y-4 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+      <div className="space-y-3 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
             <span className="font-medium">Year</span>
@@ -408,7 +403,7 @@ export default function StudentPastPaperPage() {
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Question</p>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
-                    {currentQuiz.num ? `Q${currentQuiz.num}` : "Question"} {metaLabel ? `• ${metaLabel}` : ""}
+                    {currentQuiz.num ? `Q${currentQuiz.num}` : "Question"} {metaLabel ? `| ${metaLabel}` : ""}
                   </h3>
                 </div>
                 {currentQuiz.mcq_answer && showAnswer ? (
