@@ -22,6 +22,7 @@ const navSections = [
       { href: "/dashboard/student/note", label: "Notes", icon: "📘" },
       { href: "/dashboard/student/flashcard", label: "Flashcards", icon: "💡" },
       { href: "/dashboard/student/quiz", label: "Exam Topical", icon: "📍" },
+      { href: "/dashboard/student/quiz-frq", label: "Free Response", icon: "🧾" },
       { href: "/dashboard/student/past-paper", label: "Exam Past Paper", icon: "📜" },
     ],
   },

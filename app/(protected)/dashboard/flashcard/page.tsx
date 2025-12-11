@@ -35,7 +35,11 @@ export default function FlashcardPage() {
     const load = async () => {
       const [{ data: subjectData }, { data: chapterData }] = await Promise.all([
         supabase.from("subject").select("id, name, code").order("name", { ascending: true }),
-        supabase.from("chapter").select("id, title, parent_id").order("title", { ascending: true }),
+        supabase
+          .from("chapter")
+          .select("id, title, parent_id")
+          .eq("subject_id", Number(selectedSubject))
+          .order("title", { ascending: true }),
       ]);
       setSubjects(
         (subjectData ?? []).map((s) => ({

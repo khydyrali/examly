@@ -118,7 +118,7 @@ export default function DashboardPage() {
           </Link>
         </div>
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {(subjects ?? []).slice(0, 9).map((subject) => (
+          {(subjects ?? []).map((subject) => (
             <button
               key={subject.id}
               type="button"
