@@ -504,9 +504,11 @@ export default function StudentQuizPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Question</p>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">
+                    <h3 className="text-base font-semibold text-gray-900 dark:text-gray-50">
                       {currentQuiz.num ? `Q${currentQuiz.num}` : "Question"}{" "}
-                      {currentQuiz.year ? `| ${currentQuiz.year}` : ""} {currentQuiz.paper ? `| Paper ${currentQuiz.paper}` : ""}
+                      <span className="text-sm text-gray-600 dark:text-gray-300">
+                        {currentQuiz.year ? `| ${currentQuiz.year}` : ""} {currentQuiz.paper ? `| Paper ${currentQuiz.paper}` : ""}
+                      </span>
                     </h3>
                   </div>
                   {currentQuiz.mcq_answer && showAnswer ? (
