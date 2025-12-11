@@ -19,10 +19,12 @@
   }
 }
 
+html,
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
   /* Prevent overscroll bounce/jitter on mobile when scrolling long content */
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
+  overscroll-behavior-x: none;
 }
