@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState, type ReactNode } from "react";
+import { useSupabase } from "../providers/SupabaseProvider";
 
 type IconName =
   | "home"
@@ -17,6 +18,9 @@ type IconName =
   | "student-frq"
   | "past-paper"
   | "lesson";
+
+type NavItem = { href: string; label: string; icon: IconName };
+type NavSection = { title: string; items: NavItem[] };
 
 const icons: Record<IconName, ReactNode> = {
   home: (
@@ -91,7 +95,7 @@ const icons: Record<IconName, ReactNode> = {
   ),
 };
 
-const navSections = [
+const navSections: NavSection[] = [
   {
     title: "Admin",
     items: [
@@ -106,6 +110,7 @@ const navSections = [
   {
     title: "Student",
     items: [
+      { href: "/dashboard/student", label: "Dashboard", icon: "home" as IconName },
       { href: "/dashboard/student/note", label: "Notes", icon: "student-note" as IconName },
       { href: "/dashboard/student/flashcard", label: "Flashcards", icon: "student-flash" as IconName },
       { href: "/dashboard/student/quiz", label: "Exam Topical", icon: "student-quiz" as IconName },
@@ -119,7 +124,30 @@ const navSections = [
   },
 ];
 
+function getUserRoleFromToken(token?: string | null) {
+  if (!token || typeof window === "undefined") return null;
+  const [, payload] = token.split(".");
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    const decoded = atob(padded);
+    const claims = JSON.parse(decoded) as {
+      user_role?: unknown;
+      app_metadata?: { user_role?: unknown };
+      user_metadata?: { user_role?: unknown };
+    };
+    const role = claims.user_role ?? claims.app_metadata?.user_role ?? claims.user_metadata?.user_role;
+    return typeof role === "string" ? role : null;
+  } catch (error) {
+    console.warn("Failed to parse JWT for user role", error);
+    return null;
+  }
+}
+
 export function Sidebar() {
+  const { session } = useSupabase();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -130,18 +158,30 @@ export function Sidebar() {
     setMobileOpen(false);
   };
 
+  const userRole = useMemo(() => getUserRoleFromToken(session?.access_token), [session?.access_token]);
+  const visibleNavSections = useMemo(
+    () => {
+      if (userRole === "admin") return navSections;
+      if (userRole === "teacher") return navSections.filter((section) => section.title !== "Admin");
+      if (userRole === "student") return navSections.filter((section) => section.title === "Student");
+      return [];
+    },
+    [userRole],
+  );
+
   const sections = useMemo(
     () =>
-      navSections.map((section) => ({
+      visibleNavSections.map((section) => ({
         ...section,
         items: section.items.map((item) => {
           const isExact = pathname === item.href;
           const isChild = pathname?.startsWith(`${item.href}/`);
-          const active = item.href === "/dashboard" ? isExact : isExact || isChild;
+          const isRootDashboard = item.href === "/dashboard" || item.href === "/dashboard/student";
+          const active = isRootDashboard ? isExact : isExact || isChild;
           return { ...item, active };
         }),
       })),
-    [pathname],
+    [pathname, visibleNavSections],
   );
 
   const linkBase =
