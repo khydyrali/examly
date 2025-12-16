@@ -82,9 +82,11 @@ export function LoginForm() {
   const handleGoogle = async () => {
     setError(null);
     setBusy('google');
-    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const baseUrl =
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') : undefined) ??
+      (typeof window !== 'undefined' ? window.location.origin : undefined);
     const redirectPath = sanitizeRedirect(redirect);
-    const redirectTo = origin ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}` : undefined;
+    const redirectTo = baseUrl ? `${baseUrl}/auth/callback?redirect=${encodeURIComponent(redirectPath)}` : undefined;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {

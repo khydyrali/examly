@@ -25,10 +25,33 @@ export default function AuthCallbackPage() {
 
   useEffect(() => {
     const handleSession = async () => {
-      const { error: sessionError } = await supabase.auth.getSessionFromUrl({ storeSession: true });
-      if (sessionError) {
-        setError(sessionError.message);
-        return;
+      if (typeof window === "undefined") return;
+
+      const currentUrl = new URL(window.location.href);
+      const hasCode = !!currentUrl.searchParams.get("code");
+
+      if (hasCode) {
+        const { error: sessionError } = await supabase.auth.exchangeCodeForSession(currentUrl.toString());
+        if (sessionError) {
+          setError(sessionError.message);
+          return;
+        }
+      } else {
+        // Handle implicit flow with tokens in hash fragment
+        const hash = window.location.hash.replace(/^#/, "");
+        const params = new URLSearchParams(hash);
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token");
+        if (access_token && refresh_token) {
+          const { error: setErrorResult } = await supabase.auth.setSession({ access_token, refresh_token });
+          if (setErrorResult) {
+            setError(setErrorResult.message);
+            return;
+          }
+        } else {
+          setError("No auth code or tokens found in callback URL.");
+          return;
+        }
       }
       const redirect = sanitizeRedirect(searchParams.get("redirect"));
       router.replace(redirect);

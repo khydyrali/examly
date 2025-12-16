@@ -35,12 +35,14 @@ export function SignupForm() {
     setError(null);
     setMessage(null);
     setBusy('email');
-    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const baseUrl =
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') : undefined) ??
+      (typeof window !== 'undefined' ? window.location.origin : undefined);
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: origin ? `${origin}${redirect.startsWith('/') ? redirect : '/'}` : undefined,
+        emailRedirectTo: baseUrl ? `${baseUrl}${redirect}` : undefined,
       },
     });
     setBusy(null);
@@ -62,9 +64,11 @@ export function SignupForm() {
     setError(null);
     setMessage(null);
     setBusy('google');
-    const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const baseUrl =
+      (typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, '') : undefined) ??
+      (typeof window !== 'undefined' ? window.location.origin : undefined);
     const redirectPath = sanitizeRedirect(redirect);
-    const redirectTo = origin ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}` : undefined;
+    const redirectTo = baseUrl ? `${baseUrl}/auth/callback?redirect=${encodeURIComponent(redirectPath)}` : undefined;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
