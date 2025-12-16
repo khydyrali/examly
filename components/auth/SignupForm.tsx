@@ -5,11 +5,24 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useSupabase } from '../providers/SupabaseProvider';
 
+function sanitizeRedirect(value: string | null) {
+  if (!value) return '/dashboard';
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    try {
+      const url = new URL(value);
+      return url.pathname || '/dashboard';
+    } catch {
+      return '/dashboard';
+    }
+  }
+  return value.startsWith('/') ? value : `/${value}`;
+}
+
 export function SignupForm() {
   const { supabase } = useSupabase();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirect = searchParams.get('redirect') || '/dashboard';
+  const redirect = sanitizeRedirect(searchParams.get('redirect'));
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -50,10 +63,12 @@ export function SignupForm() {
     setMessage(null);
     setBusy('google');
     const origin = typeof window !== 'undefined' ? window.location.origin : undefined;
+    const redirectPath = sanitizeRedirect(redirect);
+    const redirectTo = origin ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectPath)}` : undefined;
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: origin ? `${origin}${redirect.startsWith('/') ? redirect : '/'}` : undefined,
+        redirectTo,
       },
     });
     if (oauthError) {
