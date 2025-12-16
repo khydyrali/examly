@@ -8,6 +8,7 @@ type Option = { label: string; value: string };
 type ChapterRow = { id: number; title: string | null; parent_id: number | null; sort: number | null };
 type FlashcardRow = { id: number; front: string | null; back: string | null; chapter_id: number | null };
 type ChapterNode = { id: number; title: string; children: ChapterNode[] };
+type CardStatus = "new" | "learning" | "mastered";
 
 function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped: boolean; onFlip: () => void }) {
   return (
@@ -62,7 +63,7 @@ function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped:
 }
 
 export default function StudentFlashcardPage() {
-  const { supabase } = useSupabase();
+  const { supabase, session } = useSupabase();
   const router = useRouter();
   const [subjects, setSubjects] = useState<Option[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -76,7 +77,9 @@ export default function StudentFlashcardPage() {
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [cardStatus, setCardStatus] = useState<Record<number, "learning" | "learned">>({});
+  const [cardStatus, setCardStatus] = useState<Record<number, CardStatus>>({});
+  const [statusSaving, setStatusSaving] = useState(false);
+  const [statusError, setStatusError] = useState<string | null>(null);
   const [showChapterModal, setShowChapterModal] = useState(false);
 
   useEffect(() => {
@@ -192,6 +195,37 @@ export default function StudentFlashcardPage() {
     setFlippedCards({});
   }, [filteredCards]);
 
+  useEffect(() => {
+    const syncCardStatus = async () => {
+      if (!session || flashcards.length === 0) {
+        setCardStatus({});
+        return;
+      }
+
+      const flashcardIds = flashcards.map((card) => card.id);
+      const { data, error } = await supabase
+        .from("student_flashcard")
+        .select("flashcard_id, status")
+        .eq("student_id", session.user.id)
+        .in("flashcard_id", flashcardIds);
+
+      if (error) {
+        console.error("Failed to load flashcard statuses", error);
+        return;
+      }
+
+      const next: Record<number, CardStatus> = {};
+      (data ?? []).forEach((row) => {
+        if (row.flashcard_id !== null) {
+          next[Number(row.flashcard_id)] = row.status as CardStatus;
+        }
+      });
+      setCardStatus(next);
+    };
+
+    void syncCardStatus();
+  }, [flashcards, session, supabase]);
+
   const chapterTree = useMemo<ChapterNode[]>(() => {
     const sorted = [...chapters].sort((a, b) => {
       const sortA = a.sort ?? 0;
@@ -238,9 +272,34 @@ export default function StudentFlashcardPage() {
   const currentCard = filteredCards[currentIndex];
   const subjectLabel =
     selectedSubjectName || (selectedSubject && !subjectsLoaded ? "Loading subject..." : selectedSubject ? "Subject" : "");
-  const setStatus = (status: "learning" | "learned") => {
-    if (!currentCard) return;
+  const setStatus = async (status: CardStatus) => {
+    if (!currentCard || !session) return;
+    setStatusError(null);
+    const previous = cardStatus[currentCard.id];
     setCardStatus((prev) => ({ ...prev, [currentCard.id]: status }));
+    setStatusSaving(true);
+
+    const { error } = await supabase
+      .from("student_flashcard")
+      .upsert(
+        { flashcard_id: currentCard.id, student_id: session.user.id, status },
+        { onConflict: "flashcard_id,student_id" },
+      );
+
+    setStatusSaving(false);
+
+    if (error) {
+      const message = (error as { message?: string })?.message ?? JSON.stringify(error);
+      console.error("Failed to update flashcard status", message);
+      setStatusError(message || "Unable to update status. Check Supabase policy/constraints.");
+      setCardStatus((prev) => {
+        if (previous === undefined) {
+          const { [currentCard.id]: _removed, ...rest } = prev;
+          return rest;
+        }
+        return { ...prev, [currentCard.id]: previous };
+      });
+    }
   };
 
   if (!selectedSubject) {
@@ -411,7 +470,7 @@ export default function StudentFlashcardPage() {
               Still learning: {filteredCards.filter((c) => cardStatus[c.id] === "learning").length}
             </span>
             <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-              Know: {filteredCards.filter((c) => cardStatus[c.id] === "learned").length}
+              Know: {filteredCards.filter((c) => cardStatus[c.id] === "mastered").length}
             </span>
           </div>
 
@@ -430,7 +489,8 @@ export default function StudentFlashcardPage() {
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     type="button"
-                    onClick={() => setStatus("learning")}
+                    disabled={statusSaving}
+                    onClick={() => void setStatus("learning")}
                     className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
                       cardStatus[currentCard.id] === "learning"
                         ? "bg-amber-500 text-white"
@@ -449,9 +509,10 @@ export default function StudentFlashcardPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setStatus("learned")}
+                    disabled={statusSaving}
+                    onClick={() => void setStatus("mastered")}
                     className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
-                      cardStatus[currentCard.id] === "learned"
+                      cardStatus[currentCard.id] === "mastered"
                         ? "bg-emerald-500 text-white"
                         : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
                     }`}
@@ -467,6 +528,7 @@ export default function StudentFlashcardPage() {
                     Know
                   </button>
                 </div>
+                {statusError ? <p className="text-center text-sm text-red-600">{statusError}</p> : null}
               </div>
             )}
           </div>
