@@ -75,7 +75,13 @@ export function SignupForm() {
         disabled={busy === 'google'}
         className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 disabled:opacity-70"
       >
-        <span className="h-5 w-5 rounded-sm bg-gradient-to-br from-sky-500 to-indigo-600" />
+        <svg viewBox="0 0 48 48" className="h-5 w-5">
+          <path fill="#EA4335" d="M24 9.5c3.54 0 6 1.54 7.38 2.83l5.4-5.26C33.64 3.38 29.2 1.5 24 1.5 14.66 1.5 6.66 7.46 3.44 15.34l6.77 5.26C11.54 14.6 17.26 9.5 24 9.5z" />
+          <path fill="#4285F4" d="M46.5 24.5c0-1.56-.14-3.06-.4-4.5H24v9h12.7c-.55 2.8-2.2 5.18-4.7 6.78l7.14 5.52C43.82 37.7 46.5 31.6 46.5 24.5z" />
+          <path fill="#FBBC05" d="M10.21 28.06c-.48-1.4-.76-2.9-.76-4.56 0-1.58.28-3.1.76-4.5L3.44 13.7A22.4 22.4 0 0 0 1.5 23.5c0 3.56.84 6.92 2.34 9.8z" />
+          <path fill="#34A853" d="M24 46.5c6.5 0 11.94-2.14 15.92-5.92l-7.14-5.52c-1.98 1.34-4.52 2.14-8.78 2.14-6.74 0-12.46-5.1-14.3-11.9l-6.77 5.26C6.66 40.54 14.66 46.5 24 46.5z" />
+          <path fill="none" d="M1.5 1.5h45v45h-45z" />
+        </svg>
         {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
       </button>
 
