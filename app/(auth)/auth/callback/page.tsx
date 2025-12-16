@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 
 function sanitizeRedirect(value: string | null) {
@@ -17,10 +17,9 @@ function sanitizeRedirect(value: string | null) {
   return value.startsWith("/") ? value : `/${value}`;
 }
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const { supabase } = useSupabase();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,6 +27,7 @@ export default function AuthCallbackPage() {
       if (typeof window === "undefined") return;
 
       const currentUrl = new URL(window.location.href);
+      const redirectParam = currentUrl.searchParams.get("redirect");
       const hasCode = !!currentUrl.searchParams.get("code");
 
       if (hasCode) {
@@ -53,11 +53,11 @@ export default function AuthCallbackPage() {
           return;
         }
       }
-      const redirect = sanitizeRedirect(searchParams.get("redirect"));
+      const redirect = sanitizeRedirect(redirectParam);
       router.replace(redirect);
     };
     void handleSession();
-  }, [router, searchParams, supabase.auth]);
+  }, [router, supabase.auth]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -67,5 +67,22 @@ export default function AuthCallbackPage() {
         {error ? <p className="mt-3 text-sm text-red-600">{error}</p> : null}
       </div>
     </main>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+          <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-sm">
+            <p className="text-sm font-medium text-slate-800">Completing sign-in…</p>
+            <p className="mt-1 text-xs text-slate-500">Please wait while we finish authenticating your account.</p>
+          </div>
+        </main>
+      }
+    >
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
