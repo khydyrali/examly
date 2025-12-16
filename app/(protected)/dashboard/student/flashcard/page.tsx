@@ -279,12 +279,21 @@ export default function StudentFlashcardPage() {
     setCardStatus((prev) => ({ ...prev, [currentCard.id]: status }));
     setStatusSaving(true);
 
-    const { error } = await supabase
-      .from("student_flashcard")
-      .upsert(
-        { flashcard_id: currentCard.id, student_id: session.user.id, status },
-        { onConflict: "flashcard_id,student_id" },
-      );
+    const payload = { flashcard_id: currentCard.id, student_id: session.user.id, status };
+    const isExisting = previous !== undefined;
+
+    const { error } = isExisting
+      ? await supabase
+          .from("student_flashcard")
+          .update(payload)
+          .eq("flashcard_id", currentCard.id)
+          .eq("student_id", session.user.id)
+      : await supabase
+          .from("student_flashcard")
+          .insert({
+            id: Date.now(), // bigint-friendly ID for tables without a default
+            ...payload,
+          });
 
     setStatusSaving(false);
 
@@ -299,7 +308,10 @@ export default function StudentFlashcardPage() {
         }
         return { ...prev, [currentCard.id]: previous };
       });
+      return;
     }
+
+    setCurrentIndex((idx) => (idx < filteredCards.length - 1 ? idx + 1 : idx));
   };
 
   if (!selectedSubject) {
