@@ -16,6 +16,7 @@ type IconName =
   | "student-flash"
   | "student-quiz"
   | "student-frq"
+  | "student-exam"
   | "past-paper"
   | "lesson";
 
@@ -81,6 +82,12 @@ const icons: Record<IconName, ReactNode> = {
       <path d="M5 4h14a1 1 0 0 1 1 1v14l-5-3-5 3-5-3V5a1 1 0 0 1 1-1z" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  "student-exam": (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5">
+      <path d="M6 5h12a1 1 0 0 1 1 1v12l-4-2-3 2-3-2-3 2V6a1 1 0 0 1 1-1z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 9h6M9 12h6M9 15h3" strokeLinecap="round" />
+    </svg>
+  ),
   "past-paper": (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" className="h-5 w-5">
       <path d="M7 4h7l3 3v13H7z" strokeLinecap="round" strokeLinejoin="round" />
@@ -115,6 +122,7 @@ const navSections: NavSection[] = [
       { href: "/dashboard/student/flashcard", label: "Flashcards", icon: "student-flash" as IconName },
       { href: "/dashboard/student/quiz", label: "Exam Topical", icon: "student-quiz" as IconName },
       { href: "/dashboard/student/quiz-frq", label: "Free Response", icon: "student-frq" as IconName },
+      { href: "/dashboard/student/mock-exam", label: "Mock Exams", icon: "student-exam" as IconName },
       { href: "/dashboard/student/past-paper", label: "Exam Past Paper", icon: "past-paper" as IconName },
     ],
   },
