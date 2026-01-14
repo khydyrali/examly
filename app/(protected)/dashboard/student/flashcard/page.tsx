@@ -118,35 +118,28 @@ export default function StudentFlashcardPage() {
     let isMounted = true;
 
     const load = async () => {
-      setLoading(true);
-      setLoadError(null);
       const subjectId = Number(selectedSubject);
-      const [{ data: subjectData, error: subjectError }, { data: chapterData, error: chapterError }, { data: cardData, error: cardError }] =
-        await Promise.all([
-          supabase.from("subject").select("id, name, code").order("name", { ascending: true }),
-          supabase
-            .from("chapter")
-            .select("id, title, parent_id, sort, subject_id")
-            .eq("subject_id", subjectId)
-            .order("parent_id", { ascending: true })
-            .order("sort", { ascending: true })
-            .order("title", { ascending: true }),
-          supabase
-            .from("flashcard")
-            .select("id, front, back, chapter_id, subject_id, created_at")
-            .eq("subject_id", subjectId)
-            .order("chapter_id", { ascending: true })
-            .order("created_at", { ascending: true }),
-        ]);
+      const [{ data: subjectData, error: subjectError }, { data: chapterData, error: chapterError }] = await Promise.all([
+        supabase.from("subject").select("id, name, code").order("name", { ascending: true }),
+        supabase
+          .from("chapter")
+          .select("id, title, parent_id, sort, subject_id")
+          .eq("subject_id", subjectId)
+          .order("parent_id", { ascending: true })
+          .order("sort", { ascending: true })
+          .order("title", { ascending: true }),
+      ]);
 
       if (!isMounted) return;
 
-      if (subjectError || chapterError || cardError) {
-        setLoadError(subjectError?.message ?? chapterError?.message ?? cardError?.message ?? "Unable to load flashcards.");
+      if (subjectError || chapterError) {
+        setLoadError(subjectError?.message ?? chapterError?.message ?? "Unable to load chapters.");
       }
 
       setChapters((chapterData as ChapterRow[]) ?? []);
-      setFlashcards((cardData as FlashcardRow[]) ?? []);
+      setFlashcards([]);
+      setCardStatus({});
+      setCurrentIndex(0);
 
       setOpenParents((prev) => {
         const next = { ...prev };
@@ -160,11 +153,7 @@ export default function StudentFlashcardPage() {
         return next;
       });
 
-      setActiveChapterId((prev) => {
-        if (!prev) return prev;
-        const stillExists = ((chapterData as ChapterRow[]) ?? []).some((c) => c.id === prev);
-        return stillExists ? prev : null;
-      });
+      setActiveChapterId(null);
 
       const match = (subjectData ?? []).find((s) => String(s.id) === selectedSubject);
       if (match) {
@@ -175,7 +164,6 @@ export default function StudentFlashcardPage() {
         }
       }
 
-      setLoading(false);
     };
 
     void load();
@@ -185,9 +173,35 @@ export default function StudentFlashcardPage() {
     };
   }, [selectedSubject, supabase]);
 
+  const fetchFlashcardsForChapter = async (chapterId: number) => {
+    if (!selectedSubject) return;
+
+    setActiveChapterId(chapterId);
+    setLoading(true);
+    setLoadError(null);
+    const subjectId = Number(selectedSubject);
+
+    const { data, error } = await supabase
+      .from("flashcard")
+      .select("id, front, back, chapter_id, subject_id, created_at")
+      .eq("subject_id", subjectId)
+      .eq("chapter_id", chapterId)
+      .order("created_at", { ascending: true })
+      .limit(1000); // cap per chapter
+
+    if (error) {
+      setLoadError(error.message ?? "Unable to load flashcards.");
+      setLoading(false);
+      return;
+    }
+
+    setFlashcards((data as FlashcardRow[]) ?? []);
+    setLoading(false);
+  };
+
   const filteredCards = useMemo(() => {
-    if (!activeChapterId) return flashcards;
-    return flashcards.filter((card) => card.chapter_id === activeChapterId);
+    if (!activeChapterId) return [];
+    return flashcards;
   }, [activeChapterId, flashcards]);
 
   useEffect(() => {
@@ -203,23 +217,35 @@ export default function StudentFlashcardPage() {
       }
 
       const flashcardIds = flashcards.map((card) => card.id);
-      const { data, error } = await supabase
-        .from("student_flashcard")
-        .select("flashcard_id, status")
-        .eq("student_id", session.user.id)
-        .in("flashcard_id", flashcardIds);
-
-      if (error) {
-        console.error("Failed to load flashcard statuses", error);
-        return;
+      const pageSize = 1000;
+      const batches = [];
+      for (let i = 0; i < flashcardIds.length; i += pageSize) {
+        const slice = flashcardIds.slice(i, i + pageSize);
+        batches.push(
+          supabase
+            .from("student_flashcard")
+            .select("flashcard_id, status")
+            .eq("student_id", session.user.id)
+            .in("flashcard_id", slice),
+        );
       }
 
+      const results = await Promise.all(batches);
       const next: Record<number, CardStatus> = {};
-      (data ?? []).forEach((row) => {
-        if (row.flashcard_id !== null) {
-          next[Number(row.flashcard_id)] = row.status as CardStatus;
+
+      results.forEach(({ data, error }) => {
+        if (error) {
+          console.error("Failed to load flashcard statuses", error);
+          return;
         }
+
+        (data ?? []).forEach((row) => {
+          if (row.flashcard_id !== null) {
+            next[Number(row.flashcard_id)] = row.status as CardStatus;
+          }
+        });
       });
+
       setCardStatus(next);
     };
 
@@ -255,14 +281,13 @@ export default function StudentFlashcardPage() {
   }, [chapters]);
 
   const activeChapterTitle = useMemo(() => {
-    if (!activeChapterId) return "All chapters";
+    if (!activeChapterId) return "Select a chapter";
     const match = chapters.find((c) => c.id === activeChapterId);
     return match?.title ?? "Selected chapter";
   }, [activeChapterId, chapters]);
 
   const toggleParent = (id: number) => {
     setOpenParents((prev) => ({ ...prev, [id]: !prev[id] }));
-    setActiveChapterId(id);
   };
 
   const toggleFlip = (id: number) => {
@@ -378,7 +403,14 @@ export default function StudentFlashcardPage() {
             </div>
             <button
               type="button"
-              onClick={() => setActiveChapterId(null)}
+              onClick={() => {
+                setActiveChapterId(null);
+                setFlashcards([]);
+                setCardStatus({});
+                setCurrentIndex(0);
+                setLoadError(null);
+                setLoading(false);
+              }}
               className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition ${
                 activeChapterId === null
                   ? "bg-blue-600 text-white"
@@ -395,14 +427,13 @@ export default function StudentFlashcardPage() {
             <div className="space-y-3">
               {chapterTree.map((parent) => {
                 const isOpen = openParents[parent.id];
-                const isActive = activeChapterId === parent.id;
                 return (
                   <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
                     <button
                       type="button"
                       onClick={() => toggleParent(parent.id)}
                       className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
-                        isActive
+                        isOpen
                           ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
                           : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
                       }`}
@@ -422,7 +453,7 @@ export default function StudentFlashcardPage() {
                         <button
                           key={child.id}
                           type="button"
-                          onClick={() => setActiveChapterId(child.id)}
+                          onClick={() => void fetchFlashcardsForChapter(child.id)}
                           className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
                             activeChapterId === child.id
                               ? "bg-blue-600 text-white shadow-sm"
@@ -598,7 +629,7 @@ export default function StudentFlashcardPage() {
                             key={child.id}
                             type="button"
                             onClick={() => {
-                              setActiveChapterId(child.id);
+                              void fetchFlashcardsForChapter(child.id);
                               setShowChapterModal(false);
                             }}
                             className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
