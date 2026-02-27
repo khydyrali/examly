@@ -1,2 +1,20 @@
-# examly
-examly.mn is a complete study hub for Cambridge IGCSE, AP, and A Levels students. Explore flashcards, short notes, interactive past papers, mock exams, and online training. Ideal for anyone studying the curriculum and eager to learn efficiently while helping friends succeed!
+# examly.mn
+
+**examly.mn** is a study platform for Cambridge IGCSE, AP, and A Level students. It offers flashcards, short notes, interactive past papers, mock exams, and online training — perfect for self-learners and students helping friends succeed.
+
+## Features (Frontend Phase)
+- Responsive landing page and dashboard
+- Flashcards with flip functionality
+- Short notes display
+- Interactive past papers and mock exams UI (timed mode)
+- Mobile-friendly design
+
+## Tech Stack
+- **Frontend:** Next.js, React
+- **Styling:** Tailwind CSS / CSS Modules (your choice)
+- **Icons & UI Components:** [Optional libraries]
+
+## Getting Started
+1. Clone the repo:
+```bash
+git clone https://github.com/yourusername/examly.mn.git
