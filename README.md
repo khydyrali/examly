@@ -10,6 +10,7 @@
 - Mobile-friendly design
 
 ## Tech Stack
+- **Backend:** Supabase, expressjs, python
 - **Frontend:** Next.js, React
 - **Styling:** Tailwind CSS / CSS Modules (your choice)
 - **Icons & UI Components:** [Optional libraries]
