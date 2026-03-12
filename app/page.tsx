@@ -12,10 +12,10 @@ export default function Home() {
       <header className="mx-auto flex w-full max-w-6xl items-center justify-between rounded-full bg-white/70 px-4 py-4 shadow-sm backdrop-blur md:px-6">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white font-semibold shadow-lg shadow-indigo-500/30">
-            FP
+            EX
           </div>
           <div>
-            <p className="text-sm font-semibold text-slate-800">FlexPrep</p>
+            <p className="text-sm font-semibold text-slate-800">Examly</p>
             <p className="text-xs text-slate-500">Study. Faster. Confident.</p>
           </div>
         </div>
@@ -263,7 +263,7 @@ export default function Home() {
             <h2 className="text-2xl font-bold text-slate-900">Built by exam nerds for exam takers.</h2>
             <p className="max-w-3xl text-slate-600">
               We’re a small team of former top scorers and teachers who have sat the same exams-IGCSE, A Levels, AP, SAT, IELTS, and HSK.
-              FlexPrep stays concise, exam-board aligned, and stress-tested with real students.
+              Examly stays concise, exam-board aligned, and stress-tested with real students.
             </p>
             <div className="flex flex-wrap gap-2 text-sm">
               {["Board-aligned syllabi", "Real past-paper patterns", "Fast feedback loops", "No filler, just recall power"].map((pill) => (
@@ -301,7 +301,7 @@ export default function Home() {
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-emerald-600">Stay exam-ready</p>
             <h3 className="text-3xl font-bold">Weekly study plan, auto-built from your gaps.</h3>
             <p className="text-lg text-slate-700">
-              FlexPrep looks at your weakest topics and builds a plan with notes, practice sets, and flashcards so you actually improve.
+              Examly looks at your weakest topics and builds a plan with notes, practice sets, and flashcards so you actually improve.
             </p>
             <div className="flex flex-wrap gap-2 text-sm">
               {["Adapts to marks", "Reminder nudges", "Paper-style mocks", "Lightweight, no fluff"].map((pill) => (
@@ -370,7 +370,7 @@ export default function Home() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Ready?</p>
-            <h3 className="text-2xl font-bold text-slate-900">Join FlexPrep and get exam-ready faster.</h3>
+            <h3 className="text-2xl font-bold text-slate-900">Join Examly and get exam-ready faster.</h3>
             <p className="text-slate-600">Short, modern, clearly about study. Start free and keep your streak.</p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -386,3 +386,4 @@ export default function Home() {
     </main>
   );
 }
+

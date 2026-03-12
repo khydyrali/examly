@@ -226,16 +226,16 @@ export function Sidebar() {
         <div className="flex w-full flex-col gap-8">
           <div className="flex items-center justify-between px-2">
             <div className={`flex items-center gap-3 ${collapsed ? "justify-center" : ""}`}>
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-500 text-xl font-bold text-white shadow">
-                <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M5 12a7 7 0 0 1 14 0c0 4-3 7-7 7H8" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M8 17c1.5 0 3-1 3-2.5S9.5 12 8 12s-3-1-3-2.5S6.5 7 8 7c1.2 0 2.3.5 3 1.4" strokeLinecap="round" strokeLinejoin="round" />
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white shadow-lg shadow-blue-500/30">
+                <div className="absolute inset-[3px] rounded-xl border border-white/30" />
+                <svg viewBox="0 0 24 24" className="relative h-6 w-6" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M7 6h10M7 12h8M7 18h10" strokeLinecap="round" />
+                  <path d="M7 6v12" strokeLinecap="round" />
                 </svg>
               </div>
               {!collapsed ? (
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wide text-blue-600">Flex</p>
-                  <h1 className="text-lg font-bold text-gray-900 dark:text-gray-50">Study</h1>
+                  <h1 className="text-lg font-bold tracking-tight text-gray-900 dark:text-gray-50">Examly</h1>
                 </div>
               ) : null}
             </div>
@@ -296,3 +296,4 @@ export function Sidebar() {
     </>
   );
 }
+

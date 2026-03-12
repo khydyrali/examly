@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FlexPrep | Smarter Study for IGCSE, A Levels, and AP",
+  title: "Examly | Smarter Study for IGCSE, A Levels, and AP",
   description: "Modern study prep with curated notes, flashcards, and practice for IGCSE, AS/A Levels, and AP.",
 };
 
@@ -37,3 +37,4 @@ export default function RootLayout({
     </html>
   );
 }
+

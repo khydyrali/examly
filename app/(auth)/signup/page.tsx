@@ -10,7 +10,7 @@ export default function SignupPage() {
       <div className="grid w-full gap-10 rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-2xl backdrop-blur lg:grid-cols-[1fr,420px]">
         <div className="space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Start free</p>
-          <h1 className="text-3xl font-bold text-slate-900">Create your FlexPrep account.</h1>
+          <h1 className="text-3xl font-bold text-slate-900">Create your Examly account.</h1>
           <p className="text-sm text-slate-600">
             Sign up with email or Google. Built for IGCSE, AS/A Levels, and AP learners who want concise study that feels modern.
           </p>
@@ -35,3 +35,4 @@ export default function SignupPage() {
     </main>
   );
 }
+

@@ -1,4 +1,4 @@
-# FlexPrep — Study Hub (Next.js + Supabase)
+# Examly — Study Hub (Next.js + Supabase)
 
 Modern study/landing experience for IGCSE, AS/A Levels, and AP. Includes Supabase auth with email/password, Google login, signup, and full password reset flow.
 
@@ -38,3 +38,4 @@ Visit `http://localhost:3000`.
 ## Notes
 - Lock down your Supabase tables with RLS to the roles/users you want.
 - Update CTA links or copy to fit your brand; visuals are intentionally concise and study-focused. 
+
