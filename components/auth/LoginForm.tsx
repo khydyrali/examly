@@ -100,17 +100,17 @@ export function LoginForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-6 shadow-lg">
-      <div className="space-y-2 text-center">
-        <h2 className="text-xl font-semibold text-slate-900">Log in</h2>
-        <p className="text-sm text-slate-600">Use email/password or continue with Google.</p>
+    <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-violet-100 bg-white p-6 shadow-pop sm:p-7">
+      <div className="space-y-1 text-center">
+        <h2 className="font-heading text-2xl font-extrabold text-ink">Log in</h2>
+        <p className="text-sm font-semibold text-ink-soft">Use email/password or continue with Google.</p>
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
         disabled={busy === 'google'}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-900 shadow-sm transition hover:-translate-y-0.5 disabled:opacity-70"
+        className="flex w-full items-center justify-center gap-2 rounded-full border-2 border-violet-100 bg-white px-4 py-3 text-sm font-bold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 disabled:opacity-70"
       >
         <svg viewBox="0 0 48 48" className="h-5 w-5">
           <path fill="#EA4335" d="M24 9.5c3.54 0 6 1.54 7.38 2.83l5.4-5.26C33.64 3.38 29.2 1.5 24 1.5 14.66 1.5 6.66 7.46 3.44 15.34l6.77 5.26C11.54 14.6 17.26 9.5 24 9.5z" />
@@ -122,52 +122,52 @@ export function LoginForm() {
         {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
       </button>
 
-      <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-slate-400">
-        <div className="h-px flex-1 bg-slate-200" />
+      <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-ink-soft/60">
+        <div className="h-px flex-1 bg-violet-100" />
         <span>or</span>
-        <div className="h-px flex-1 bg-slate-200" />
+        <div className="h-px flex-1 bg-violet-100" />
       </div>
 
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-900">Email</label>
+          <label className="mb-1 block text-sm font-bold text-ink">Email</label>
           <input
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            className="w-full rounded-xl border-2 border-violet-100 bg-white px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
             placeholder="you@student.com"
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-medium text-slate-900">Password</label>
+          <label className="mb-1 block text-sm font-bold text-ink">Password</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-slate-900 focus:outline-none focus:ring-2 focus:ring-slate-900/10"
+            className="w-full rounded-xl border-2 border-violet-100 bg-white px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
             placeholder="••••••••"
           />
         </div>
 
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
 
         <button
           type="submit"
           disabled={busy === 'email'}
-          className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-md shadow-slate-900/10 transition hover:-translate-y-0.5 disabled:opacity-70"
+          className="w-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-4 py-3 text-sm font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:opacity-70"
         >
           {busy === 'email' ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      <div className="flex flex-wrap items-center justify-between text-sm text-slate-600">
-        <Link href="/forgot-password" className="font-semibold text-slate-900 hover:underline">
+      <div className="flex flex-wrap items-center justify-between text-sm font-semibold text-ink-soft">
+        <Link href="/forgot-password" className="font-bold text-violet-700 hover:underline">
           Forgot password?
         </Link>
-        <Link href="/signup" className="font-semibold text-slate-900 hover:underline">
+        <Link href="/signup" className="font-bold text-violet-700 hover:underline">
           Create account
         </Link>
       </div>

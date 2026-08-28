@@ -10,7 +10,9 @@ export default function ProtectedLayout({ children }: { children: ReactNode }) {
         <Sidebar />
         <div className="flex-1">
           <TopNav />
-          <main className="w-full px-6 py-8">{children}</main>
+          <main className="w-full px-6 py-8">
+            <div className="mx-auto w-full max-w-6xl">{children}</div>
+          </main>
         </div>
       </div>
     </AuthGuard>

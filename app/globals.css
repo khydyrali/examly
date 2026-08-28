@@ -1,21 +1,50 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fff8ec;
+  --foreground: #241b40;
+
+  --color-primary: #7c3aed;
+  --color-primary-dark: #5b21b6;
+  --color-secondary: #fb923c;
+  --color-accent: #14b8a6;
+  --color-highlight: #facc15;
+  --color-success: #22c55e;
+  --color-danger: #f43f5e;
+  --color-info: #38bdf8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f4f1ff;
+  --color-ink: #241b40;
+  --color-ink-soft: #5b5478;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-highlight: var(--color-highlight);
+  --color-success: var(--color-success);
+  --color-danger: var(--color-danger);
+  --color-info: var(--color-info);
+  --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
+  --color-ink: var(--color-ink);
+  --color-ink-soft: var(--color-ink-soft);
+  --font-sans: var(--font-nunito);
+  --font-heading: var(--font-baloo);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #150f28;
+    --foreground: #f4f1ff;
+    --color-surface: #1e1738;
+    --color-surface-muted: #251d42;
+    --color-ink: #f4f1ff;
+    --color-ink-soft: #c7bfe6;
   }
 }
 
@@ -23,8 +52,53 @@ html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), system-ui, -apple-system, sans-serif;
-  /* Prevent overscroll bounce/jitter on mobile when scrolling long content */
+  font-family: var(--font-nunito), system-ui, -apple-system, sans-serif;
   overscroll-behavior-y: none;
   overscroll-behavior-x: none;
+}
+
+@layer utilities {
+  .font-heading {
+    font-family: var(--font-baloo), var(--font-nunito), system-ui, sans-serif;
+  }
+
+  .shadow-pop {
+    box-shadow: 0 14px 30px -10px rgba(124, 58, 237, 0.35);
+  }
+
+  .shadow-pop-orange {
+    box-shadow: 0 14px 30px -10px rgba(251, 146, 60, 0.4);
+  }
+
+  .shadow-pop-teal {
+    box-shadow: 0 14px 30px -10px rgba(20, 184, 166, 0.35);
+  }
+
+  .bg-dots {
+    background-image: radial-gradient(rgba(124, 58, 237, 0.16) 1.5px, transparent 1.5px);
+    background-size: 22px 22px;
+  }
+
+  .wiggle-hover:hover {
+    animation: wiggle 0.5s ease-in-out;
+  }
+
+  .float-slow {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .float-slower {
+    animation: float 8s ease-in-out infinite;
+  }
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-4deg); }
+  75% { transform: rotate(4deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-12px); }
 }

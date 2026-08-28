@@ -1,21 +1,24 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Baloo_2, Nunito } from "next/font/google";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const baloo = Baloo_2({
+  variable: "--font-baloo",
   subsets: ["latin"],
+  weight: ["500", "600", "700", "800"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const nunito = Nunito({
+  variable: "--font-nunito",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export const metadata: Metadata = {
-  title: "Examly | Smarter Study for IGCSE, A Levels, and AP",
-  description: "Modern study prep with curated notes, flashcards, and practice for IGCSE, AS/A Levels, and AP.",
+  title: "Examly | Fun, Colorful Study for IGCSE, A Levels & AP",
+  description:
+    "Notes, flashcards, quizzes, and a huge past papers library made fun for secondary and high school students - IGCSE, AS/A Levels, AP, SAT, IELTS and HSK.",
 };
 
 export default function RootLayout({
@@ -26,10 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} bg-gray-50 text-gray-900 antialiased dark:bg-black dark:text-white`}
+        className={`${baloo.variable} ${nunito.variable} bg-background text-ink antialiased`}
       >
         <SupabaseProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50 dark:from-black dark:via-neutral-950 dark:to-slate-900">
+          <div className="min-h-screen bg-gradient-to-br from-[#fff8ec] via-[#fdf2ff] to-[#eef2ff] dark:from-[#150f28] dark:via-[#1a1330] dark:to-[#150f28]">
             {children}
           </div>
         </SupabaseProvider>
