@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Baloo_2, Nunito } from "next/font/google";
 import { SupabaseProvider } from "@/components/providers/SupabaseProvider";
+import { LanguageProvider } from "@/components/providers/LanguageProvider";
 import "./globals.css";
 
 const baloo = Baloo_2({
@@ -31,11 +32,13 @@ export default function RootLayout({
       <body
         className={`${baloo.variable} ${nunito.variable} bg-background text-ink antialiased`}
       >
-        <SupabaseProvider>
-          <div className="min-h-screen bg-gradient-to-br from-[#fff8ec] via-[#fdf2ff] to-[#eef2ff] dark:from-[#150f28] dark:via-[#1a1330] dark:to-[#150f28]">
-            {children}
-          </div>
-        </SupabaseProvider>
+        <LanguageProvider>
+          <SupabaseProvider>
+            <div className="min-h-screen bg-gradient-to-br from-[#fff8ec] via-[#fdf2ff] to-[#eef2ff] dark:from-[#150f28] dark:via-[#1a1330] dark:to-[#150f28]">
+              {children}
+            </div>
+          </SupabaseProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

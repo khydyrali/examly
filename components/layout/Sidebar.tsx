@@ -24,7 +24,10 @@ import {
   X,
 } from "lucide-react";
 import { useSupabase } from "../providers/SupabaseProvider";
+import { useLanguage } from "../providers/LanguageProvider";
 import { LogoMark } from "@/components/brand/Logo";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
+import type { Dictionary } from "../providers/translations";
 
 type IconName =
   | "home"
@@ -46,7 +49,8 @@ type IconName =
   | "practice";
 
 type NavItem = { href: string; label: string; icon: IconName };
-type NavSection = { title: string; items: NavItem[] };
+type SectionKey = "admin" | "student" | "teacher";
+type NavSection = { key: SectionKey; title: string; items: NavItem[] };
 
 const icons: Record<IconName, typeof Home> = {
   home: Home,
@@ -68,42 +72,48 @@ const icons: Record<IconName, typeof Home> = {
   practice: Target,
 };
 
-const navSections: NavSection[] = [
-  {
-    title: "Admin",
-    items: [
-      { href: "/dashboard", label: "Dashboard", icon: "home" },
-      { href: "/dashboard/note", label: "Notes", icon: "note" },
-      { href: "/dashboard/flashcard", label: "Flashcards", icon: "flashcard" },
-      { href: "/dashboard/quiz", label: "Quiz MCQ", icon: "quiz" },
-      { href: "/dashboard/quiz-frq", label: "Quiz FRQ", icon: "frq" },
-      { href: "/dashboard/chapter", label: "Chapters", icon: "chapter" },
-    ],
-  },
-  {
-    title: "Student",
-    items: [
-      { href: "/dashboard/student", label: "Dashboard", icon: "home" },
-      { href: "/dashboard/student/note", label: "Notes", icon: "student-note" },
-      { href: "/dashboard/student/flashcard", label: "Flashcards", icon: "student-flash" },
-      { href: "/dashboard/student/practice", label: "Practice", icon: "practice" },
-      { href: "/dashboard/student/mock-exam", label: "Mock Exams", icon: "student-exam" },
-      { href: "/dashboard/student/past-paper", label: "Past Papers", icon: "past-paper" },
-      { href: "/dashboard/student/leaderboard", label: "Leaderboard", icon: "leaderboard" },
-      { href: "/dashboard/student/achievements", label: "Achievements", icon: "achievements" },
-      { href: "/dashboard/student/tutors", label: "Find a Tutor", icon: "tutors" },
-      { href: "/dashboard/student/blog", label: "Blog", icon: "blog" },
-    ],
-  },
-  {
-    title: "Teacher",
-    items: [
-      { href: "/dashboard/lesson", label: "Lessons", icon: "lesson" },
-      { href: "/dashboard/tutor/profile", label: "Tutor Profile", icon: "tutor-profile" },
-      { href: "/dashboard/tutor/blog", label: "My Blog", icon: "blog" },
-    ],
-  },
-];
+function getNavSections(t: Dictionary): NavSection[] {
+  const { sections, items } = t.sidebar;
+  return [
+    {
+      key: "admin",
+      title: sections.admin,
+      items: [
+        { href: "/dashboard", label: items.dashboard, icon: "home" },
+        { href: "/dashboard/note", label: items.notes, icon: "note" },
+        { href: "/dashboard/flashcard", label: items.flashcards, icon: "flashcard" },
+        { href: "/dashboard/quiz", label: items.quizMcq, icon: "quiz" },
+        { href: "/dashboard/quiz-frq", label: items.quizFrq, icon: "frq" },
+        { href: "/dashboard/chapter", label: items.chapters, icon: "chapter" },
+      ],
+    },
+    {
+      key: "student",
+      title: sections.student,
+      items: [
+        { href: "/dashboard/student", label: items.dashboard, icon: "home" },
+        { href: "/dashboard/student/note", label: items.notes, icon: "student-note" },
+        { href: "/dashboard/student/flashcard", label: items.flashcards, icon: "student-flash" },
+        { href: "/dashboard/student/practice", label: items.practice, icon: "practice" },
+        { href: "/dashboard/student/mock-exam", label: items.mockExams, icon: "student-exam" },
+        { href: "/dashboard/student/past-paper", label: items.pastPapers, icon: "past-paper" },
+        { href: "/dashboard/student/leaderboard", label: items.leaderboard, icon: "leaderboard" },
+        { href: "/dashboard/student/achievements", label: items.achievements, icon: "achievements" },
+        { href: "/dashboard/student/tutors", label: items.findTutor, icon: "tutors" },
+        { href: "/dashboard/student/blog", label: items.blog, icon: "blog" },
+      ],
+    },
+    {
+      key: "teacher",
+      title: sections.teacher,
+      items: [
+        { href: "/dashboard/lesson", label: items.lessons, icon: "lesson" },
+        { href: "/dashboard/tutor/profile", label: items.tutorProfile, icon: "tutor-profile" },
+        { href: "/dashboard/tutor/blog", label: items.myBlog, icon: "blog" },
+      ],
+    },
+  ];
+}
 
 function getUserRoleFromToken(token?: string | null) {
   if (!token || typeof window === "undefined") return null;
@@ -129,6 +139,7 @@ function getUserRoleFromToken(token?: string | null) {
 
 export function Sidebar() {
   const { session } = useSupabase();
+  const { t } = useLanguage();
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -139,13 +150,14 @@ export function Sidebar() {
     setMobileOpen(false);
   };
 
+  const navSections = useMemo(() => getNavSections(t), [t]);
   const userRole = useMemo(() => getUserRoleFromToken(session?.access_token), [session?.access_token]);
   const visibleNavSections = useMemo(() => {
     if (userRole === "admin") return navSections;
-    if (userRole === "teacher") return navSections.filter((section) => section.title !== "Admin");
-    if (userRole === "student") return navSections.filter((section) => section.title === "Student");
+    if (userRole === "teacher") return navSections.filter((section) => section.key !== "admin");
+    if (userRole === "student") return navSections.filter((section) => section.key === "student");
     return [];
-  }, [userRole]);
+  }, [navSections, userRole]);
 
   const sections = useMemo(
     () =>
@@ -213,7 +225,7 @@ export function Sidebar() {
 
           <nav className="space-y-6 overflow-y-auto pb-6">
             {sections.map((section) => (
-              <div key={section.title}>
+              <div key={section.key}>
                 {!collapsed ? (
                   <p className="px-2 text-[11px] font-extrabold uppercase tracking-wide text-ink-soft/70">{section.title}</p>
                 ) : null}
@@ -237,6 +249,10 @@ export function Sidebar() {
               </div>
             ))}
           </nav>
+
+          <div className={`mt-auto flex ${collapsed ? "justify-center" : "px-2"}`}>
+            <LanguageSwitcher />
+          </div>
         </div>
       </aside>
     </>

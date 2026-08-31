@@ -4,9 +4,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { useSupabase } from '../providers/SupabaseProvider';
+import { useLanguage } from '../providers/LanguageProvider';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 export function TopNav() {
   const { supabase, session } = useSupabase();
+  const { t } = useLanguage();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -28,20 +31,21 @@ export function TopNav() {
                   : 'text-ink-soft hover:bg-subtle/40'
               }`}
             >
-              Dashboard
+              {t.topnav.dashboard}
             </Link>
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
+          <LanguageSwitcher />
           <span className="hidden rounded-full bg-subtle/40 px-3 py-1.5 font-bold text-violet-700 dark:text-violet-300 sm:inline-flex">
-            {session?.user.email ?? 'Logged in'}
+            {session?.user.email ?? t.topnav.loggedIn}
           </span>
           <button
             onClick={handleSignOut}
             className="inline-flex items-center gap-1.5 rounded-full border-2 border-subtle px-3 py-1.5 font-bold text-ink transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t.topnav.signOut}
           </button>
         </div>
       </div>
