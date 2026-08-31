@@ -1,7 +1,11 @@
+"use client";
+
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowLeft, Sparkles } from "lucide-react";
 import { Logo, LogoMark } from "@/components/brand/Logo";
+import { useLanguage } from "@/components/providers/LanguageProvider";
+import { LanguageSwitcher } from "@/components/ui/LanguageSwitcher";
 
 export function AuthLayout({
   eyebrow,
@@ -18,6 +22,8 @@ export function AuthLayout({
   bulletColor?: string;
   children: ReactNode;
 }) {
+  const { t } = useLanguage();
+
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-12">
       <div className="pointer-events-none absolute inset-0 -z-10 bg-dots opacity-40" />
@@ -26,7 +32,10 @@ export function AuthLayout({
 
       <div className="mx-auto grid w-full max-w-5xl gap-8 rounded-[2rem] border-2 border-subtle bg-surface/90 p-6 shadow-2xl backdrop-blur sm:p-8 lg:grid-cols-[1fr,420px] lg:p-10">
         <div className="flex flex-col justify-center space-y-5">
-          <Logo markClassName="h-10 w-10" />
+          <div className="flex items-center justify-between">
+            <Logo markClassName="h-10 w-10" />
+            <LanguageSwitcher />
+          </div>
           <span className="inline-flex w-fit items-center gap-1.5 rounded-full bg-subtle-strong px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-violet-700 dark:text-violet-200">
             <Sparkles className="h-3.5 w-3.5" /> {eyebrow}
           </span>
@@ -44,7 +53,7 @@ export function AuthLayout({
             <LogoMark className="h-16 w-16 opacity-80" />
           </div>
           <Link href="/" className="inline-flex w-fit items-center gap-1.5 text-sm font-bold text-violet-700 hover:underline">
-            <ArrowLeft className="h-4 w-4" /> Back to home
+            <ArrowLeft className="h-4 w-4" /> {t.auth.backToHome}
           </Link>
         </div>
         <div className="flex items-center justify-center">{children}</div>

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import { useSupabase } from '../providers/SupabaseProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 
 function sanitizeRedirect(value: string | null) {
   if (!value) return '/dashboard';
@@ -50,6 +51,7 @@ function getUserRole(session: Session | null) {
 
 export function LoginForm() {
   const { supabase } = useSupabase();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = sanitizeRedirect(searchParams.get('redirect'));
@@ -102,8 +104,8 @@ export function LoginForm() {
   return (
     <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-subtle bg-surface p-6 shadow-pop sm:p-7">
       <div className="space-y-1 text-center">
-        <h2 className="font-heading text-2xl font-extrabold text-ink">Log in</h2>
-        <p className="text-sm font-semibold text-ink-soft">Use email/password or continue with Google.</p>
+        <h2 className="font-heading text-2xl font-extrabold text-ink">{t.auth.login.heading}</h2>
+        <p className="text-sm font-semibold text-ink-soft">{t.auth.login.subheading}</p>
       </div>
 
       <button
@@ -119,18 +121,18 @@ export function LoginForm() {
           <path fill="#34A853" d="M24 46.5c6.5 0 11.94-2.14 15.92-5.92l-7.14-5.52c-1.98 1.34-4.52 2.14-8.78 2.14-6.74 0-12.46-5.1-14.3-11.9l-6.77 5.26C6.66 40.54 14.66 46.5 24 46.5z" />
           <path fill="none" d="M1.5 1.5h45v45h-45z" />
         </svg>
-        {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
+        {busy === 'google' ? t.auth.googleBusy : t.auth.google}
       </button>
 
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-ink-soft/60">
         <div className="h-px flex-1 bg-subtle-strong" />
-        <span>or</span>
+        <span>{t.auth.or}</span>
         <div className="h-px flex-1 bg-subtle-strong" />
       </div>
 
       <form onSubmit={handleEmailLogin} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-bold text-ink">Email</label>
+          <label className="mb-1 block text-sm font-bold text-ink">{t.auth.emailLabel}</label>
           <input
             type="email"
             required
@@ -141,14 +143,14 @@ export function LoginForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-bold text-ink">Password</label>
+          <label className="mb-1 block text-sm font-bold text-ink">{t.auth.passwordLabel}</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
-            placeholder="••••••••"
+            placeholder={t.auth.login.passwordPlaceholder}
           />
         </div>
 
@@ -159,16 +161,16 @@ export function LoginForm() {
           disabled={busy === 'email'}
           className="w-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-4 py-3 text-sm font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:opacity-70"
         >
-          {busy === 'email' ? 'Signing in…' : 'Sign in'}
+          {busy === 'email' ? t.auth.login.submitBusy : t.auth.login.submit}
         </button>
       </form>
 
       <div className="flex flex-wrap items-center justify-between text-sm font-semibold text-ink-soft">
         <Link href="/forgot-password" className="font-bold text-violet-700 hover:underline">
-          Forgot password?
+          {t.auth.login.forgot}
         </Link>
         <Link href="/signup" className="font-bold text-violet-700 hover:underline">
-          Create account
+          {t.auth.login.createAccount}
         </Link>
       </div>
     </div>

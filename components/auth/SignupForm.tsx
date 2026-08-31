@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { useSupabase } from '../providers/SupabaseProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 
 function sanitizeRedirect(value: string | null) {
   if (!value) return '/dashboard';
@@ -20,6 +21,7 @@ function sanitizeRedirect(value: string | null) {
 
 export function SignupForm() {
   const { supabase } = useSupabase();
+  const { t } = useLanguage();
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = sanitizeRedirect(searchParams.get('redirect'));
@@ -57,7 +59,7 @@ export function SignupForm() {
       return;
     }
 
-    setMessage('Check your email to confirm your account. Once confirmed, you will be logged in automatically.');
+    setMessage(t.auth.signup.confirmMessage);
   };
 
   const handleGoogle = async () => {
@@ -84,8 +86,8 @@ export function SignupForm() {
   return (
     <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-subtle bg-surface p-6 shadow-pop sm:p-7">
       <div className="space-y-1 text-center">
-        <h2 className="font-heading text-2xl font-extrabold text-ink">Create your account</h2>
-        <p className="text-sm font-semibold text-ink-soft">Start building streaks with notes, practice, and flashcards.</p>
+        <h2 className="font-heading text-2xl font-extrabold text-ink">{t.auth.signup.heading}</h2>
+        <p className="text-sm font-semibold text-ink-soft">{t.auth.signup.subheading}</p>
       </div>
 
       <button
@@ -101,18 +103,18 @@ export function SignupForm() {
           <path fill="#34A853" d="M24 46.5c6.5 0 11.94-2.14 15.92-5.92l-7.14-5.52c-1.98 1.34-4.52 2.14-8.78 2.14-6.74 0-12.46-5.1-14.3-11.9l-6.77 5.26C6.66 40.54 14.66 46.5 24 46.5z" />
           <path fill="none" d="M1.5 1.5h45v45h-45z" />
         </svg>
-        {busy === 'google' ? 'Opening Google…' : 'Continue with Google'}
+        {busy === 'google' ? t.auth.googleBusy : t.auth.google}
       </button>
 
       <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-[0.2em] text-ink-soft/60">
         <div className="h-px flex-1 bg-subtle-strong" />
-        <span>or</span>
+        <span>{t.auth.or}</span>
         <div className="h-px flex-1 bg-subtle-strong" />
       </div>
 
       <form onSubmit={handleSignup} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-bold text-ink">Email</label>
+          <label className="mb-1 block text-sm font-bold text-ink">{t.auth.emailLabel}</label>
           <input
             type="email"
             required
@@ -123,14 +125,14 @@ export function SignupForm() {
           />
         </div>
         <div>
-          <label className="mb-1 block text-sm font-bold text-ink">Password</label>
+          <label className="mb-1 block text-sm font-bold text-ink">{t.auth.passwordLabel}</label>
           <input
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
-            placeholder="At least 6 characters"
+            placeholder={t.auth.signup.passwordPlaceholder}
             minLength={6}
           />
         </div>
@@ -143,14 +145,14 @@ export function SignupForm() {
           disabled={busy === 'email'}
           className="w-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-4 py-3 text-sm font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:opacity-70"
         >
-          {busy === 'email' ? 'Creating account…' : 'Create account'}
+          {busy === 'email' ? t.auth.signup.submitBusy : t.auth.signup.submit}
         </button>
       </form>
 
       <div className="flex flex-wrap items-center justify-between text-sm font-semibold text-ink-soft">
-        <span>Already have an account?</span>
+        <span>{t.auth.signup.haveAccount}</span>
         <Link href="/login" className="font-bold text-violet-700 hover:underline">
-          Log in
+          {t.auth.signup.login}
         </Link>
       </div>
     </div>

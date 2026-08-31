@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import { useState, type FormEvent } from 'react';
 import { useSupabase } from '../providers/SupabaseProvider';
+import { useLanguage } from '../providers/LanguageProvider';
 
 export function ForgotPasswordForm() {
   const { supabase } = useSupabase();
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -27,19 +29,19 @@ export function ForgotPasswordForm() {
       return;
     }
 
-    setMessage('Check your email for a reset link. After clicking it, set a new password on the next screen.');
+    setMessage(t.auth.forgotPassword.successMessage);
   };
 
   return (
     <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-subtle bg-surface p-6 shadow-pop sm:p-7">
       <div className="space-y-1 text-center">
-        <h2 className="font-heading text-2xl font-extrabold text-ink">Forgot password</h2>
-        <p className="text-sm font-semibold text-ink-soft">We will send a secure reset link to your email.</p>
+        <h2 className="font-heading text-2xl font-extrabold text-ink">{t.auth.forgotPassword.heading}</h2>
+        <p className="text-sm font-semibold text-ink-soft">{t.auth.forgotPassword.subheading}</p>
       </div>
 
       <form onSubmit={handleReset} className="space-y-4">
         <div>
-          <label className="mb-1 block text-sm font-bold text-ink">Email</label>
+          <label className="mb-1 block text-sm font-bold text-ink">{t.auth.emailLabel}</label>
           <input
             type="email"
             required
@@ -58,16 +60,16 @@ export function ForgotPasswordForm() {
           disabled={busy}
           className="w-full rounded-full bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 px-4 py-3 text-sm font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:opacity-70"
         >
-          {busy ? 'Sending reset link…' : 'Send reset link'}
+          {busy ? t.auth.forgotPassword.submitBusy : t.auth.forgotPassword.submit}
         </button>
       </form>
 
       <div className="flex flex-wrap items-center justify-between text-sm font-semibold text-ink-soft">
         <Link href="/login" className="font-bold text-violet-700 hover:underline">
-          Back to login
+          {t.auth.forgotPassword.backToLogin}
         </Link>
         <Link href="/signup" className="font-bold text-violet-700 hover:underline">
-          Create account
+          {t.auth.forgotPassword.createAccount}
         </Link>
       </div>
     </div>
