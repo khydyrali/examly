@@ -2,7 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  Brain,
+  CheckCircle2,
+  ChevronRight,
+  Layers,
+  Menu,
+  RotateCw,
+  Sparkles,
+  X,
+} from "lucide-react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { Card, Badge } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 type Option = { label: string; value: string };
 type ChapterRow = { id: number; title: string | null; parent_id: number | null; sort: number | null };
@@ -12,35 +24,45 @@ type CardStatus = "new" | "learning" | "mastered";
 
 function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped: boolean; onFlip: () => void }) {
   return (
-    <div className="group relative h-88 w-full cursor-pointer [perspective:1400px]" onClick={onFlip} role="button" tabIndex={0} onKeyDown={(event) => {
-      if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        onFlip();
-      }
-    }}>
+    <div
+      className="group relative h-80 w-full cursor-pointer sm:h-96 [perspective:1400px]"
+      onClick={onFlip}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onFlip();
+        }
+      }}
+    >
       <div
-        className={`relative h-full w-full rounded-2xl border border-gray-200 bg-white/90 shadow-md transition duration-500 [transform-style:preserve-3d] dark:border-gray-800 dark:bg-neutral-900 ${
+        className={`relative h-full w-full rounded-3xl border-2 border-subtle bg-surface shadow-pop transition duration-500 [transform-style:preserve-3d] ${
           flipped ? "[transform:rotateY(180deg)]" : ""
         }`}
       >
-        <div className="absolute inset-0 flex flex-col gap-4 rounded-2xl px-6 py-5 [backface-visibility:hidden]">
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-blue-600">
-            <span>Front</span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">Click to flip</span>
+        <div className="absolute inset-0 flex flex-col gap-4 rounded-3xl px-6 py-6 [backface-visibility:hidden] sm:px-8 sm:py-8">
+          <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-violet-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-violet-100 px-3 py-1">
+              <Sparkles className="h-3.5 w-3.5" /> Front
+            </span>
+            <span className="text-[10px] font-bold text-ink-soft">Tap to flip</span>
           </div>
-          <div className="flex-1 overflow-auto text-lg leading-relaxed text-gray-900 dark:text-gray-100 md:text-xl">
+          <div className="flex-1 overflow-auto text-lg leading-relaxed text-ink md:text-xl">
             <div className="flex h-full w-full items-center justify-center text-center">
               <div dangerouslySetInnerHTML={{ __html: card.front ?? "No front text provided." }} />
             </div>
           </div>
         </div>
 
-        <div className="absolute inset-0 flex flex-col gap-4 rounded-2xl px-6 py-5 [backface-visibility:hidden] [transform:rotateY(180deg)]">
-          <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-emerald-600">
-            <span>Back</span>
-            <span className="text-[10px] text-gray-500 dark:text-gray-400">Click to flip</span>
+        <div className="absolute inset-0 flex flex-col gap-4 rounded-3xl px-6 py-6 [backface-visibility:hidden] [transform:rotateY(180deg)] sm:px-8 sm:py-8">
+          <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-wide text-teal-600">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100 px-3 py-1">
+              <CheckCircle2 className="h-3.5 w-3.5" /> Back
+            </span>
+            <span className="text-[10px] font-bold text-ink-soft">Tap to flip</span>
           </div>
-          <div className="flex-1 overflow-auto text-lg leading-relaxed text-gray-900 dark:text-gray-100 md:text-xl">
+          <div className="flex-1 overflow-auto text-lg leading-relaxed text-ink md:text-xl">
             <div className="flex h-full w-full items-center justify-center text-center">
               <div dangerouslySetInnerHTML={{ __html: card.back ?? "No back text provided." }} />
             </div>
@@ -54,9 +76,9 @@ function FlashcardCard({ card, flipped, onFlip }: { card: FlashcardRow; flipped:
           event.stopPropagation();
           onFlip();
         }}
-        className="absolute bottom-3 right-3 rounded-full bg-blue-600 px-3 py-1 text-xs font-semibold text-white shadow transition hover:-translate-y-0.5 hover:bg-blue-700"
+        className="absolute bottom-4 right-4 z-10 inline-flex items-center gap-1.5 rounded-full bg-violet-600 px-3.5 py-2 text-xs font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-violet-700"
       >
-        Flip
+        <RotateCw className="h-3.5 w-3.5" /> Flip
       </button>
     </div>
   );
@@ -336,6 +358,10 @@ export default function StudentFlashcardPage() {
       return;
     }
 
+    void supabase
+      .from("student_activity_log")
+      .upsert({ student_id: session.user.id, activity_date: new Date().toISOString().slice(0, 10) }, { onConflict: "student_id,activity_date" });
+
     setCurrentIndex((idx) => (idx < filteredCards.length - 1 ? idx + 1 : idx));
   };
 
@@ -343,14 +369,16 @@ export default function StudentFlashcardPage() {
     return (
       <div className="space-y-6">
         <div className="space-y-2">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Student Flashcards</p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Select a subject to view flashcards</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Choose a subject below or go back to the dashboard to pick one.</p>
+          <Badge color="orange">
+            <Layers className="h-3.5 w-3.5" /> Student Flashcards
+          </Badge>
+          <h1 className="font-heading text-3xl font-extrabold text-ink">Select a subject to view flashcards</h1>
+          <p className="text-sm font-semibold text-ink-soft">Choose a subject below or go back to the dashboard to pick one.</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+        <Card className="p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <select
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50 sm:w-72"
+              className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm font-semibold text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100 sm:w-72"
               value=""
               onChange={(event) => {
                 const value = event.target.value;
@@ -369,37 +397,33 @@ export default function StudentFlashcardPage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
-            >
+            <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
               Back to dashboard
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-1">
-      {loadError ? <p className="text-sm text-red-600">{loadError}</p> : null}
+    <div className="flex h-[calc(100vh-7rem)] flex-col gap-4">
+      {loadError ? <p className="text-sm font-semibold text-rose-600">{loadError}</p> : null}
 
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        <button
-          type="button"
-          onClick={() => setShowChapterModal(true)}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-100 lg:hidden"
-        >
-          Chapters
-        </button>
+      <button
+        type="button"
+        onClick={() => setShowChapterModal(true)}
+        className="flex items-center gap-2 rounded-full border-2 border-subtle bg-surface px-4 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:bg-subtle lg:hidden"
+      >
+        <Menu className="h-4 w-4" /> Chapters
+      </button>
 
-        <aside className="hidden h-fit w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:block lg:w-[420px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <aside className="hidden min-h-0 w-full flex-shrink-0 flex-col overflow-hidden rounded-3xl border-2 border-subtle bg-surface/95 shadow-sm lg:flex lg:w-[380px]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-subtle bg-subtle/60 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Flashcards</p>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
+              <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Flashcards</p>
+              <div className="text-sm font-bold text-ink">{subjectLabel || "Select a subject"}</div>
             </div>
             <button
               type="button"
@@ -411,57 +435,55 @@ export default function StudentFlashcardPage() {
                 setLoadError(null);
                 setLoading(false);
               }}
-              className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition ${
+              className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition ${
                 activeChapterId === null
-                  ? "bg-blue-600 text-white"
-                  : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-pop"
+                  : "border-2 border-subtle bg-surface text-ink hover:bg-subtle"
               }`}
             >
               All chapters
             </button>
           </div>
-          <div className="h-[calc(80vh-120px)] overflow-y-auto px-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
             {chapterTree.length === 0 ? (
-              <p className="px-1 text-sm text-gray-600 dark:text-gray-400">No chapters found for this subject yet.</p>
+              <p className="px-1 text-sm font-semibold text-ink-soft">No chapters found for this subject yet.</p>
             ) : null}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {chapterTree.map((parent) => {
                 const isOpen = openParents[parent.id];
                 return (
-                  <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+                  <div key={parent.id} className="overflow-hidden rounded-2xl border-2 border-subtle bg-surface shadow-sm">
                     <button
                       type="button"
                       onClick={() => toggleParent(parent.id)}
-                      className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
-                        isOpen
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
-                          : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+                      className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-bold transition ${
+                        isOpen ? "bg-subtle text-violet-700" : "bg-surface text-ink hover:bg-subtle/60"
                       }`}
                     >
                       <div className="flex flex-col">
                         <span className="line-clamp-1">{parent.title}</span>
-                        <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
-                          {parent.children.length} topics
-                        </span>
+                        <span className="text-[11px] font-semibold text-ink-soft">{parent.children.length} topics</span>
                       </div>
-                      <span className={`text-xs transition ${isOpen ? "rotate-90" : ""}`}>&gt;</span>
+                      <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                     </button>
                     <div
-                      className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
+                      className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t-2 border-subtle bg-subtle/40 px-2 py-2 transition-[max-height] duration-300`}
                     >
                       {parent.children.map((child) => (
                         <button
                           key={child.id}
                           type="button"
                           onClick={() => void fetchFlashcardsForChapter(child.id)}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm leading-tight font-semibold transition ${
                             activeChapterId === child.id
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
+                              ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-sm"
+                              : "text-ink hover:bg-surface"
                           }`}
                         >
                           <span className="line-clamp-1">{child.title}</span>
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                          <span className={`text-[11px] font-bold ${activeChapterId === child.id ? "text-white/80" : "text-ink-soft"}`}>
+                            Open
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -472,16 +494,16 @@ export default function StudentFlashcardPage() {
           </div>
         </aside>
 
-        <section className="flex-1 space-y-4 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+        <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-3xl border-2 border-subtle bg-surface/95 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-violet-600">
                 <span>{subjectLabel || "Flashcards"}</span>
-                <span className="text-gray-400">/</span>
-                <span className="text-gray-600 dark:text-gray-400">{activeChapterTitle}</span>
+                <span className="text-violet-300">/</span>
+                <span className="text-ink-soft">{activeChapterTitle}</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{activeChapterTitle}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h2 className="font-heading text-2xl font-extrabold text-ink">{activeChapterTitle}</h2>
+              <p className="text-sm font-semibold text-ink-soft">
                 {loading ? "Loading flashcards..." : `${filteredCards.length} card${filteredCards.length === 1 ? "" : "s"} in view.`}
               </p>
             </div>
@@ -490,7 +512,7 @@ export default function StudentFlashcardPage() {
                 type="button"
                 onClick={() => setCurrentIndex((idx) => Math.max(0, idx - 1))}
                 disabled={currentIndex === 0 || filteredCards.length === 0}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle disabled:opacity-40"
               >
                 Prev
               </button>
@@ -498,80 +520,60 @@ export default function StudentFlashcardPage() {
                 type="button"
                 onClick={() => setCurrentIndex((idx) => Math.min(filteredCards.length - 1, idx + 1))}
                 disabled={currentIndex >= filteredCards.length - 1 || filteredCards.length === 0}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle disabled:opacity-40"
               >
                 Next
               </button>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+              <span className="text-xs font-bold text-ink-soft">
                 {filteredCards.length > 0 ? `Card ${currentIndex + 1} of ${filteredCards.length}` : "No cards"}
               </span>
             </div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200">
-              Still learning: {filteredCards.filter((c) => cardStatus[c.id] === "learning").length}
-            </span>
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200">
-              Know: {filteredCards.filter((c) => cardStatus[c.id] === "mastered").length}
-            </span>
+            <Badge color="yellow">Still learning: {filteredCards.filter((c) => cardStatus[c.id] === "learning").length}</Badge>
+            <Badge color="teal">Know: {filteredCards.filter((c) => cardStatus[c.id] === "mastered").length}</Badge>
           </div>
 
-          <div className="mt-3">
+          <div>
             {loading ? (
-              <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+              <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
                 Loading flashcards...
               </div>
             ) : !currentCard ? (
-              <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+              <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
                 No flashcards for this selection yet.
               </div>
             ) : (
-              <div className="mx-auto w-full max-w-4xl space-y-4">
+              <div className="mx-auto w-full max-w-3xl space-y-5">
                 <FlashcardCard card={currentCard} flipped={!!flippedCards[currentCard.id]} onFlip={() => toggleFlip(currentCard.id)} />
                 <div className="flex flex-wrap items-center justify-center gap-4">
                   <button
                     type="button"
                     disabled={statusSaving}
                     onClick={() => void setStatus("learning")}
-                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                    className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold shadow-sm transition disabled:opacity-60 ${
                       cardStatus[currentCard.id] === "learning"
-                        ? "bg-amber-500 text-white"
-                        : "border border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-100 dark:hover:bg-amber-900/60"
+                        ? "bg-gradient-to-r from-amber-400 to-yellow-400 text-amber-950 shadow-pop-orange"
+                        : "border-2 border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
                     }`}
                   >
-                    <span aria-hidden className="h-4 w-4">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="9" />
-                        <circle cx="9" cy="10" r="0.9" />
-                        <circle cx="15" cy="10" r="0.9" />
-                        <path d="M9 16h6" />
-                      </svg>
-                    </span>
-                    Still learning
+                    <Brain className="h-4 w-4" /> Still learning
                   </button>
                   <button
                     type="button"
                     disabled={statusSaving}
                     onClick={() => void setStatus("mastered")}
-                    className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
+                    className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-extrabold shadow-sm transition disabled:opacity-60 ${
                       cardStatus[currentCard.id] === "mastered"
-                        ? "bg-emerald-500 text-white"
-                        : "border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+                        ? "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-pop-teal"
+                        : "border-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                     }`}
                   >
-                    <span aria-hidden className="h-4 w-4">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="12" cy="12" r="9" />
-                        <circle cx="9" cy="10" r="0.9" />
-                        <circle cx="15" cy="10" r="0.9" />
-                        <path d="M8.5 14.5c1.5 2 5.5 2 7 0" />
-                      </svg>
-                    </span>
-                    Know
+                    <CheckCircle2 className="h-4 w-4" /> Know
                   </button>
                 </div>
-                {statusError ? <p className="text-center text-sm text-red-600">{statusError}</p> : null}
+                {statusError ? <p className="text-center text-sm font-semibold text-rose-600">{statusError}</p> : null}
               </div>
             )}
           </div>
@@ -579,50 +581,46 @@ export default function StudentFlashcardPage() {
       </div>
 
       {showChapterModal ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 lg:hidden">
-          <div className="mt-8 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-neutral-950">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-violet-950/40 px-4 py-8 backdrop-blur-sm lg:hidden">
+          <div className="mt-8 w-full max-w-md rounded-3xl border-2 border-subtle bg-surface p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Chapters</p>
+                <div className="text-sm font-bold text-ink">{subjectLabel || "Select a subject"}</div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowChapterModal(false)}
-                className="h-9 w-9 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-200"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-subtle bg-surface text-ink shadow-sm hover:bg-subtle"
               >
-                X
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="h-[60vh] overflow-y-auto">
               <div className="space-y-3">
                 {chapterTree.length === 0 ? (
-                  <p className="px-1 text-sm text-gray-600 dark:text-gray-400">No chapters found for this subject yet.</p>
+                  <p className="px-1 text-sm font-semibold text-ink-soft">No chapters found for this subject yet.</p>
                 ) : null}
                 {chapterTree.map((parent) => {
                   const isOpen = openParents[parent.id];
                   const isActive = activeChapterId === parent.id;
                   return (
-                    <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+                    <div key={parent.id} className="overflow-hidden rounded-2xl border-2 border-subtle bg-surface shadow-sm">
                       <button
                         type="button"
                         onClick={() => toggleParent(parent.id)}
-                        className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
-                          isActive
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
-                            : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+                        className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-bold transition ${
+                          isActive ? "bg-subtle text-violet-700" : "bg-surface text-ink hover:bg-subtle/60"
                         }`}
                       >
                         <div className="flex flex-col">
                           <span className="line-clamp-1">{parent.title}</span>
-                          <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
-                            {parent.children.length} topics
-                          </span>
+                          <span className="text-[11px] font-semibold text-ink-soft">{parent.children.length} topics</span>
                         </div>
-                        <span className={`text-xs transition ${isOpen ? "rotate-90" : ""}`}>&gt;</span>
+                        <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                       </button>
                       <div
-                        className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
+                        className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t-2 border-subtle bg-subtle/40 px-2 py-2 transition-[max-height] duration-300`}
                       >
                         {parent.children.map((child) => (
                           <button
@@ -632,14 +630,16 @@ export default function StudentFlashcardPage() {
                               void fetchFlashcardsForChapter(child.id);
                               setShowChapterModal(false);
                             }}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm leading-tight font-semibold transition ${
                               activeChapterId === child.id
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
+                                ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-sm"
+                                : "text-ink hover:bg-surface"
                             }`}
                           >
                             <span className="line-clamp-1">{child.title}</span>
-                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                            <span className={`text-[11px] font-bold ${activeChapterId === child.id ? "text-white/80" : "text-ink-soft"}`}>
+                              Open
+                            </span>
                           </button>
                         ))}
                       </div>

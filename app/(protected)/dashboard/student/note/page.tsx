@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronRight, Menu, ScrollText, X } from "lucide-react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { Card, Badge } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 type Option = { label: string; value: string };
 type ChapterRow = { id: number; title: string | null; parent_id: number | null; sort: number | null };
@@ -18,7 +21,7 @@ type StudentNoteRow = {
 };
 
 function HtmlNote({ html }: { html: string | null }) {
-  if (!html) return <p className="text-sm text-gray-600 dark:text-gray-400">No note content yet.</p>;
+  if (!html) return <p className="text-sm font-semibold text-ink-soft">No note content yet.</p>;
   return (
     <>
       <div className="note-html max-w-none [&_*]:break-words" dangerouslySetInnerHTML={{ __html: html }} suppressHydrationWarning />
@@ -56,13 +59,13 @@ function HtmlNote({ html }: { html: string | null }) {
           margin: 0.25em 0;
         }
         .note-html li::marker {
-          color: #0f172a;
+          color: var(--color-primary);
           font-weight: 600;
         }
         .note-html blockquote {
-          border-left: 3px solid #e5e7eb;
+          border-left: 3px solid #e9d5ff;
           padding-left: 0.75rem;
-          color: #4b5563;
+          color: var(--color-ink-soft);
           margin: 0 0 0.75em;
         }
         .note-html table {
@@ -72,7 +75,7 @@ function HtmlNote({ html }: { html: string | null }) {
         }
         .note-html th,
         .note-html td {
-          border: 1px solid #e5e7eb;
+          border: 1px solid #e9d5ff;
           padding: 0.5rem 0.75rem;
         }
         .note-html img {
@@ -81,23 +84,9 @@ function HtmlNote({ html }: { html: string | null }) {
           border-radius: 0.5rem;
         }
         .note-html code {
-          background: #f3f4f6;
+          background: #f4f1ff;
           padding: 0.15rem 0.35rem;
           border-radius: 0.35rem;
-        }
-        @media (prefers-color-scheme: dark) {
-          .note-html blockquote {
-            border-color: #374151;
-            color: #d1d5db;
-          }
-          .note-html th,
-          .note-html td {
-            border-color: #374151;
-          }
-          .note-html code {
-            background: #1f2937;
-            color: #e5e7eb;
-          }
         }
       `}</style>
     </>
@@ -272,16 +261,18 @@ export default function StudentNotePage() {
 
   if (!selectedSubject) {
     return (
-      <div className="space-y-4">
-        <div className="space-y-1">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-600">Student Notes</p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Select a subject to view notes</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Choose a subject below or go back to the dashboard to pick one.</p>
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Badge color="violet">
+            <ScrollText className="h-3.5 w-3.5" /> Student Notes
+          </Badge>
+          <h1 className="font-heading text-3xl font-extrabold text-ink">Select a subject to view notes</h1>
+          <p className="text-sm font-semibold text-ink-soft">Choose a subject below or go back to the dashboard to pick one.</p>
         </div>
-        <div className="rounded-2xl border border-gray-200 bg-white/80 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+        <Card className="p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <select
-              className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50 sm:w-72"
+              className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm font-semibold text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100 sm:w-72"
               value=""
               onChange={(event) => {
                 const value = event.target.value;
@@ -300,97 +291,87 @@ export default function StudentNotePage() {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              onClick={() => router.push("/dashboard")}
-              className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
-            >
+            <Button type="button" variant="outline" onClick={() => router.push("/dashboard")}>
               Back to dashboard
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {error ? (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-800 dark:bg-red-950/50 dark:text-red-200">
-          {error}
-        </div>
-      ) : null}
+    <div className="flex h-[calc(100vh-7rem)] flex-col gap-4">
+      {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
 
-      <div className="relative flex flex-col gap-4 lg:flex-row lg:items-start">
-        <button
-          type="button"
-          onClick={() => setShowChapterModal(true)}
-          className="flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-100 lg:hidden"
-        >
-          Chapters
-        </button>
+      <button
+        type="button"
+        onClick={() => setShowChapterModal(true)}
+        className="flex items-center gap-2 rounded-full border-2 border-subtle bg-surface px-4 py-2.5 text-sm font-bold text-ink shadow-sm transition hover:bg-subtle lg:hidden"
+      >
+        <Menu className="h-4 w-4" /> Chapters
+      </button>
 
-        <aside className="hidden w-full flex-shrink-0 rounded-2xl border border-gray-200 bg-white/90 shadow-sm dark:border-gray-800 dark:bg-neutral-900 lg:block lg:w-[360px] lg:sticky lg:top-4 lg:max-h-[calc(100vh-120px)] lg:overflow-y-auto">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3 dark:border-gray-800">
+      <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
+        <aside className="hidden min-h-0 w-full flex-shrink-0 flex-col overflow-hidden rounded-3xl border-2 border-subtle bg-surface/95 shadow-sm lg:flex lg:w-[380px]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-subtle bg-subtle/60 px-4 py-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
-              <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
+              <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Chapters</p>
+              <div className="text-sm font-bold text-ink">{subjectLabel || "Select a subject"}</div>
             </div>
             <button
               type="button"
               onClick={() => setActiveChapterId(null)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold shadow-sm transition ${
+              className={`rounded-full px-3 py-1.5 text-xs font-bold shadow-sm transition ${
                 activeChapterId === null
-                  ? "bg-blue-600 text-white"
-                  : "border border-gray-300 bg-white text-gray-800 hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                  ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-pop"
+                  : "border-2 border-subtle bg-surface text-ink hover:bg-subtle"
               }`}
             >
               All chapters
             </button>
           </div>
-          <div className="px-3 pb-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
             {chapterTree.length === 0 ? (
-              <p className="px-1 pt-3 text-sm text-gray-600 dark:text-gray-400">No chapters found for this subject yet.</p>
+              <p className="px-1 text-sm font-semibold text-ink-soft">No chapters found for this subject yet.</p>
             ) : null}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {chapterTree.map((parent) => {
                 const isOpen = openParents[parent.id];
                 const isActive = activeChapterId === parent.id;
                 return (
-                  <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+                  <div key={parent.id} className="overflow-hidden rounded-2xl border-2 border-subtle bg-surface shadow-sm">
                     <button
                       type="button"
                       onClick={() => toggleParent(parent.id)}
-                      className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
-                          : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+                      className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-bold transition ${
+                        isActive ? "bg-subtle text-violet-700" : "bg-surface text-ink hover:bg-subtle/60"
                       }`}
                     >
                       <div className="flex flex-col">
                         <span className="line-clamp-1">{parent.title}</span>
-                        <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
-                          {parent.children.length} topics
-                        </span>
+                        <span className="text-[11px] font-semibold text-ink-soft">{parent.children.length} topics</span>
                       </div>
-                      <span className={`text-xs transition ${isOpen ? "rotate-90" : ""}`}>&gt;</span>
+                      <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                     </button>
                     <div
-                      className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
+                      className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t-2 border-subtle bg-subtle/40 px-2 py-2 transition-[max-height] duration-300`}
                     >
                       {parent.children.map((child) => (
                         <button
                           key={child.id}
                           type="button"
                           onClick={() => setActiveChapterId(child.id)}
-                          className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm leading-tight font-semibold transition ${
                             activeChapterId === child.id
-                              ? "bg-blue-600 text-white shadow-sm"
-                              : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
+                              ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-sm"
+                              : "text-ink hover:bg-surface"
                           }`}
                         >
                           <span className="line-clamp-1">{child.title}</span>
-                          <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                          <span className={`text-[11px] font-bold ${activeChapterId === child.id ? "text-white/80" : "text-ink-soft"}`}>
+                            Open
+                          </span>
                         </button>
                       ))}
                     </div>
@@ -401,16 +382,16 @@ export default function StudentNotePage() {
           </div>
         </aside>
 
-        <section className="flex-1 space-y-4 rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+        <section className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto rounded-3xl border-2 border-subtle bg-surface/95 p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
+              <div className="flex flex-wrap items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-violet-600">
                 <span>{subjectLabel || "Notes"}</span>
-                <span className="text-gray-400">/</span>
-                <span className="text-gray-600 dark:text-gray-400">{activeChapterTitle}</span>
+                <span className="text-violet-300">/</span>
+                <span className="text-ink-soft">{activeChapterTitle}</span>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{activeChapterTitle}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h2 className="font-heading text-2xl font-extrabold text-ink">{activeChapterTitle}</h2>
+              <p className="text-sm font-semibold text-ink-soft">
                 {loading ? "Loading notes..." : `${filteredNotes.length} note${filteredNotes.length === 1 ? "" : "s"} in view.`}
               </p>
             </div>
@@ -419,7 +400,7 @@ export default function StudentNotePage() {
                 type="button"
                 onClick={() => setCurrentIndex((idx) => Math.max(0, idx - 1))}
                 disabled={currentIndex === 0 || filteredNotes.length === 0}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle disabled:opacity-40"
               >
                 Prev
               </button>
@@ -427,90 +408,84 @@ export default function StudentNotePage() {
                 type="button"
                 onClick={() => setCurrentIndex((idx) => Math.min(filteredNotes.length - 1, idx + 1))}
                 disabled={currentIndex >= filteredNotes.length - 1 || filteredNotes.length === 0}
-                className="rounded-full border border-gray-300 bg-white px-4 py-2 text-xs font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 disabled:opacity-50 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+                className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle disabled:opacity-40"
               >
                 Next
               </button>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+              <span className="text-xs font-bold text-ink-soft">
                 {filteredNotes.length > 0 ? `Note ${currentIndex + 1} of ${filteredNotes.length}` : "No notes"}
               </span>
             </div>
           </div>
 
           {loading ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+            <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
               Loading notes...
             </div>
           ) : !currentNote ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white/60 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+            <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
               No notes for this selection yet.
             </div>
           ) : (
-            <div className="rounded-2xl border border-gray-200 bg-white/90 p-5 shadow-sm dark:border-gray-800 dark:bg-neutral-950">
+            <Card className="p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Note</p>
-                  <h3 className="text-2xl font-bold text-gray-900 dark:text-gray-50">{currentNote.title || "Untitled note"}</h3>
+                  <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Note</p>
+                  <h3 className="font-heading text-2xl font-extrabold text-ink">{currentNote.title || "Untitled note"}</h3>
                 </div>
                 {currentNote.edited_at ? (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    Updated {new Date(currentNote.edited_at).toLocaleDateString()}
-                  </span>
+                  <span className="text-xs font-semibold text-ink-soft">Updated {new Date(currentNote.edited_at).toLocaleDateString()}</span>
                 ) : null}
               </div>
-              <div className="mt-4 overflow-auto text-base leading-relaxed text-gray-900 dark:text-gray-100">
+              <div className="mt-4 overflow-auto text-base leading-relaxed text-ink">
                 <HtmlNote html={currentNote.caption} />
               </div>
-            </div>
+            </Card>
           )}
         </section>
       </div>
 
       {showChapterModal ? (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/40 px-4 py-8 lg:hidden">
-          <div className="mt-8 w-full max-w-md rounded-2xl border border-gray-200 bg-white p-4 shadow-2xl dark:border-gray-800 dark:bg-neutral-950">
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-violet-950/40 px-4 py-8 backdrop-blur-sm lg:hidden">
+          <div className="mt-8 w-full max-w-md rounded-3xl border-2 border-subtle bg-surface p-4 shadow-2xl">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Chapters</p>
-                <div className="text-sm font-semibold text-gray-900 dark:text-gray-50">{subjectLabel || "Select a subject"}</div>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Chapters</p>
+                <div className="text-sm font-bold text-ink">{subjectLabel || "Select a subject"}</div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowChapterModal(false)}
-                className="h-9 w-9 rounded-full border border-gray-200 bg-white text-sm font-semibold text-gray-700 shadow-sm hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-200"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-subtle bg-surface text-ink shadow-sm hover:bg-subtle"
               >
-                X
+                <X className="h-4 w-4" />
               </button>
             </div>
             <div className="h-[60vh] overflow-y-auto">
               <div className="space-y-3">
                 {chapterTree.length === 0 ? (
-                  <p className="px-1 text-sm text-gray-600 dark:text-gray-400">No chapters found for this subject yet.</p>
+                  <p className="px-1 text-sm font-semibold text-ink-soft">No chapters found for this subject yet.</p>
                 ) : null}
                 {chapterTree.map((parent) => {
                   const isOpen = openParents[parent.id];
                   const isActive = activeChapterId === parent.id;
                   return (
-                    <div key={parent.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+                    <div key={parent.id} className="overflow-hidden rounded-2xl border-2 border-subtle bg-surface shadow-sm">
                       <button
                         type="button"
                         onClick={() => toggleParent(parent.id)}
-                        className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-semibold transition ${
-                          isActive
-                            ? "bg-blue-50 text-blue-700 dark:bg-blue-900/40 dark:text-blue-100"
-                            : "bg-white text-gray-900 hover:bg-gray-50 dark:bg-neutral-900 dark:text-gray-100 dark:hover:bg-neutral-800"
+                        className={`flex w-full items-center justify-between px-3 py-3 text-left text-sm font-bold transition ${
+                          isActive ? "bg-subtle text-violet-700" : "bg-surface text-ink hover:bg-subtle/60"
                         }`}
                       >
                         <div className="flex flex-col">
                           <span className="line-clamp-1">{parent.title}</span>
-                          <span className="text-[11px] font-normal text-gray-500 dark:text-gray-400">
-                            {parent.children.length} topics
-                          </span>
+                          <span className="text-[11px] font-semibold text-ink-soft">{parent.children.length} topics</span>
                         </div>
-                        <span className={`text-xs transition ${isOpen ? "rotate-90" : ""}`}>&gt;</span>
+                        <ChevronRight className={`h-4 w-4 shrink-0 transition-transform ${isOpen ? "rotate-90" : ""}`} />
                       </button>
                       <div
-                        className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t border-gray-200 bg-gray-50 px-2 py-2 transition-[max-height] duration-300 dark:border-gray-800 dark:bg-neutral-950`}
+                        className={`${isOpen ? "max-h-[1200px]" : "max-h-0"} space-y-1 overflow-hidden border-t-2 border-subtle bg-subtle/40 px-2 py-2 transition-[max-height] duration-300`}
                       >
                         {parent.children.map((child) => (
                           <button
@@ -520,14 +495,16 @@ export default function StudentNotePage() {
                               setActiveChapterId(child.id);
                               setShowChapterModal(false);
                             }}
-                            className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-left leading-tight transition ${
+                            className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm leading-tight font-semibold transition ${
                               activeChapterId === child.id
-                                ? "bg-blue-600 text-white shadow-sm"
-                                : "text-gray-800 hover:bg-white dark:text-gray-100 dark:hover:bg-neutral-800"
+                                ? "bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-sm"
+                                : "text-ink hover:bg-surface"
                             }`}
                           >
                             <span className="line-clamp-1">{child.title}</span>
-                            <span className="text-[11px] text-gray-500 dark:text-gray-400">Open</span>
+                            <span className={`text-[11px] font-bold ${activeChapterId === child.id ? "text-white/80" : "text-ink-soft"}`}>
+                              Open
+                            </span>
                           </button>
                         ))}
                       </div>

@@ -31,7 +31,7 @@ export function ForgotPasswordForm() {
   };
 
   return (
-    <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-violet-100 bg-white p-6 shadow-pop sm:p-7">
+    <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-subtle bg-surface p-6 shadow-pop sm:p-7">
       <div className="space-y-1 text-center">
         <h2 className="font-heading text-2xl font-extrabold text-ink">Forgot password</h2>
         <p className="text-sm font-semibold text-ink-soft">We will send a secure reset link to your email.</p>
@@ -45,7 +45,7 @@ export function ForgotPasswordForm() {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-xl border-2 border-violet-100 bg-white px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
             placeholder="you@student.com"
           />
         </div>

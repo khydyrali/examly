@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { CheckCircle2, Lightbulb, RotateCcw, Timer, Trophy, XCircle } from "lucide-react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { Card, Badge } from "@/components/ui/Card";
 
 type ExamRow = {
   id: number;
@@ -28,6 +30,31 @@ type ExamQuestion = {
   mcq4: string | null;
   answer: string | null;
 };
+
+function scoreBand(percent: number) {
+  if (percent >= 80) {
+    return {
+      color: "from-emerald-500 to-teal-500",
+      badge: "teal" as const,
+      label: "Excellent work!",
+      tip: "You've clearly mastered this material. Keep your streak going by trying a harder paper or a new topic.",
+    };
+  }
+  if (percent >= 50) {
+    return {
+      color: "from-amber-400 to-orange-500",
+      badge: "yellow" as const,
+      label: "Good effort!",
+      tip: "You're on the right track. Revisit the questions you missed below, then try a topical quiz on those areas.",
+    };
+  }
+  return {
+    color: "from-rose-500 to-orange-500",
+    badge: "rose" as const,
+    label: "Keep practicing!",
+    tip: "This topic needs more review. Go through your notes and flashcards for the questions you missed, then retake a similar quiz.",
+  };
+}
 
 export default function StudentMockExamDetailPage() {
   const params = useParams();
@@ -132,29 +159,23 @@ export default function StudentMockExamDetailPage() {
     };
   }, [examId, session, supabase]);
 
+  // Exams are open anytime — the timer is personal: it starts the first time
+  // this student opens the exam, not a global exam.start_date window.
   useEffect(() => {
-    if (!exam || !session) return;
-    const startTime = exam.start_date ? new Date(exam.start_date).getTime() : Date.now();
+    if (!exam || !session || isSubmitted) return;
     const durationMs = (exam.duration ?? 0) * 60_000;
-    const key = `exam_end_${exam.id}_${session.user.id}`;
-    const storedEnd = typeof window !== "undefined" ? localStorage.getItem(key) : null;
-    const defaultEnd = startTime + durationMs;
-    const storedMs = storedEnd ? new Date(storedEnd).getTime() : null;
-    const endTime = storedMs && storedMs > defaultEnd ? storedMs : defaultEnd;
+    if (durationMs <= 0) return;
 
-    if (typeof window !== "undefined" && (!storedEnd || storedMs !== endTime)) {
-      localStorage.setItem(key, new Date(endTime).toISOString());
+    const key = `exam_open_${exam.id}_${session.user.id}`;
+    const stored = typeof window !== "undefined" ? localStorage.getItem(key) : null;
+    const openedAt = stored ? new Date(stored).getTime() : Date.now();
+    if (typeof window !== "undefined" && !stored) {
+      localStorage.setItem(key, new Date(openedAt).toISOString());
     }
+    const endTime = openedAt + durationMs;
 
     const tick = () => {
-      const current = Date.now();
-      if (current < startTime) {
-        setLocked(true);
-        setRemainingMs(endTime - current);
-        return;
-      }
-
-      const remaining = endTime - current;
+      const remaining = endTime - Date.now();
       const clamped = Math.max(0, remaining);
       setRemainingMs(clamped);
       setLocked(clamped <= 0);
@@ -163,7 +184,7 @@ export default function StudentMockExamDetailPage() {
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [exam, session]);
+  }, [exam, session, isSubmitted]);
 
   const timeDisplay = useMemo(() => {
     const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
@@ -266,26 +287,73 @@ export default function StudentMockExamDetailPage() {
       return;
     }
 
+    void supabase
+      .from("student_activity_log")
+      .upsert({ student_id: session.user.id, activity_date: new Date().toISOString().slice(0, 10) }, { onConflict: "student_id,activity_date" });
+
     setSubmittedScore(totalCorrect);
     setSubmittedPercent(percent);
     setIsSubmitted(true);
     setLocked(true);
     setSubmitting(false);
-    router.push("/dashboard/student/mock-exam");
+  };
+
+  const handleRetake = async () => {
+    if (!exam || !session) return;
+    setSubmitting(true);
+    setError(null);
+
+    const questionIds = questions.map((q) => q.id);
+    if (questionIds.length > 0) {
+      const { error: deleteAnswersError } = await supabase
+        .from("student_exam_answer")
+        .delete()
+        .eq("student_id", session.user.id)
+        .in("question_id", questionIds);
+      if (deleteAnswersError) {
+        setError(deleteAnswersError.message ?? "Unable to reset your previous answers.");
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    const { error: resetError } = await supabase
+      .from("exam_students")
+      .update({ score: null, percentage: null, is_submit: false })
+      .eq("exam_id", exam.id)
+      .eq("student_id", session.user.id);
+
+    if (resetError) {
+      setError(resetError.message ?? "Unable to start a new attempt.");
+      setSubmitting(false);
+      return;
+    }
+
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(`exam_open_${exam.id}_${session.user.id}`);
+    }
+
+    setAnswers({});
+    setSubmittedScore(null);
+    setSubmittedPercent(null);
+    setIsSubmitted(false);
+    setLocked(false);
+    setRemainingMs(0);
+    setSubmitting(false);
   };
 
   if (!session) {
     return (
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Mock exam</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">Please sign in to take this exam.</p>
+        <h1 className="font-heading text-2xl font-extrabold text-ink">Mock exam</h1>
+        <p className="text-sm font-semibold text-ink-soft">Please sign in to take this exam.</p>
       </div>
     );
   }
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-dashed border-gray-300 bg-white/70 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+      <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
         Loading exam...
       </div>
     );
@@ -294,11 +362,11 @@ export default function StudentMockExamDetailPage() {
   if (error || !exam) {
     return (
       <div className="space-y-3">
-        {error ? <p className="text-sm text-red-600">{error}</p> : null}
+        {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
         <button
           type="button"
           onClick={() => router.push("/dashboard/student/mock-exam")}
-          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+          className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-sm font-bold text-ink shadow-sm transition hover:bg-subtle/40"
         >
           Back to exams
         </button>
@@ -306,87 +374,144 @@ export default function StudentMockExamDetailPage() {
     );
   }
 
-  const startsAt = exam.start_date ? new Date(exam.start_date) : null;
-  const startLocked = startsAt ? startsAt.getTime() > Date.now() : false;
+  const band = submittedPercent !== null ? scoreBand(submittedPercent) : null;
 
   return (
     <div className="space-y-4">
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Mock exam</p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">{exam.title ?? `Exam ${exam.id}`}</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {startsAt ? `Starts ${startsAt.toLocaleString()}` : "No start time"} · {exam.duration ?? 0} minutes · Max {exam.max_score ?? 0}
+          <Badge color="rose">Mock exam · Open anytime</Badge>
+          <h1 className="mt-2 font-heading text-3xl font-extrabold text-ink">{exam.title ?? `Exam ${exam.id}`}</h1>
+          <p className="text-sm font-semibold text-ink-soft">
+            {exam.duration ?? 0} minute{exam.duration === 1 ? "" : "s"} once you start · Max {exam.max_score ?? 0}
           </p>
-          {exam.description ? <p className="mt-1 text-sm text-gray-700 dark:text-gray-300">{exam.description}</p> : null}
+          {exam.description ? <p className="mt-1 text-sm font-semibold text-ink-soft">{exam.description}</p> : null}
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <span className={`text-sm font-semibold ${locked || startLocked || isSubmitted ? "text-amber-600" : "text-emerald-600"}`}>
-            {locked || startLocked || isSubmitted ? "Locked" : "Active"}
-          </span>
-          <div className="rounded-lg bg-gray-900 px-3 py-2 text-sm font-mono text-white shadow-md">{timeDisplay}</div>
-          {submittedScore !== null ? (
-            <div className="text-sm text-gray-700 dark:text-gray-300">
-              Submitted score: {submittedScore}
-              {submittedPercent !== null ? ` (${submittedPercent}%)` : ""}
-            </div>
-          ) : null}
-          {isSubmitted ? <div className="text-xs text-gray-500 dark:text-gray-400">Submission locked</div> : null}
-        </div>
+        {!isSubmitted ? (
+          <div className="flex flex-col items-end gap-2">
+            <Badge color={locked ? "yellow" : "teal"}>{locked ? "Time's up" : "In progress"}</Badge>
+            {(exam.duration ?? 0) > 0 ? (
+              <div className="inline-flex items-center gap-1.5 rounded-xl bg-violet-900 px-3 py-2 font-mono text-sm font-bold text-white shadow-md">
+                <Timer className="h-4 w-4" /> {timeDisplay}
+              </div>
+            ) : null}
+          </div>
+        ) : null}
       </div>
 
-      {startLocked ? (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-900/40 dark:text-amber-100">
-          This exam is not open yet. Please return at the start time.
-        </div>
+      {isSubmitted && submittedScore !== null ? (
+        <Card className={`overflow-hidden bg-gradient-to-br ${band?.color} p-6 text-white`}>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20">
+                <Trophy className="h-7 w-7" />
+              </div>
+              <div>
+                <p className="text-xs font-extrabold uppercase tracking-wide text-white/80">{band?.label}</p>
+                <p className="font-heading text-2xl font-extrabold">
+                  {submittedScore} / {exam.max_score ?? questions.length}
+                  {submittedPercent !== null ? ` (${submittedPercent}%)` : ""}
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleRetake()}
+              className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-bold text-violet-700 shadow-lg transition hover:-translate-y-0.5 disabled:opacity-60"
+            >
+              <RotateCcw className="h-4 w-4" /> {submitting ? "Resetting..." : "Retake exam"}
+            </button>
+          </div>
+          <div className="mt-4 flex items-start gap-2 rounded-2xl bg-white/15 p-4 text-sm font-semibold">
+            <Lightbulb className="mt-0.5 h-4 w-4 shrink-0" />
+            <span>{band?.tip}</span>
+          </div>
+        </Card>
       ) : null}
 
       <div className="space-y-4">
         {questions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-gray-300 bg-white/70 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+          <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft">
             No questions for this exam yet.
           </div>
         ) : (
           questions.map((q, index) => {
             const choices = [q.mcq1, q.mcq2, q.mcq3, q.mcq4].filter(Boolean) as string[];
             const selected = answers[q.id];
+            const correctLetter = (q.answer ?? "").trim().toUpperCase();
+            const gotItRight = isSubmitted && selected && selected.trim().toUpperCase() === correctLetter;
+
             return (
-              <div key={q.id} className="space-y-2 rounded-xl border border-gray-200 bg-white/90 p-4 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+              <Card key={q.id} className="space-y-3 p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-blue-600">
+                    <div className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wide text-violet-600">
                       <span>Question {index + 1}</span>
-                      {q.type ? <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] text-blue-700 dark:bg-blue-900/40 dark:text-blue-100">{q.type}</span> : null}
+                      {q.type ? <Badge color="violet">{q.type}</Badge> : null}
                     </div>
-                    <div className="prose prose-sm max-w-none text-gray-900 dark:prose-invert" dangerouslySetInnerHTML={{ __html: q.question ?? "" }} />
+                    <div className="prose prose-sm max-w-none text-ink" dangerouslySetInnerHTML={{ __html: q.question ?? "" }} />
                   </div>
+                  {isSubmitted ? (
+                    gotItRight ? (
+                      <Badge color="teal">
+                        <CheckCircle2 className="h-3.5 w-3.5" /> Correct
+                      </Badge>
+                    ) : (
+                      <Badge color="rose">
+                        <XCircle className="h-3.5 w-3.5" /> Missed
+                      </Badge>
+                    )
+                  ) : null}
                 </div>
                 <div className="grid gap-2 md:grid-cols-2">
                   {choices.map((choice, idx) => {
                     const letter = String.fromCharCode(65 + idx);
                     const isSelected = selected === letter;
+                    const isCorrectChoice = isSubmitted && letter === correctLetter;
+                    const border = isSubmitted
+                      ? isCorrectChoice
+                        ? "border-emerald-400 bg-emerald-50 dark:bg-emerald-950/30"
+                        : isSelected
+                          ? "border-rose-300 bg-rose-50 dark:bg-rose-950/30"
+                          : "border-subtle"
+                      : isSelected
+                        ? "border-violet-400 bg-subtle"
+                        : "border-subtle hover:border-violet-300";
                     return (
                       <button
                         key={`${q.id}-choice-${idx}`}
                         type="button"
-                        disabled={locked}
+                        disabled={locked || isSubmitted}
                         onClick={() => void handleAnswerSelect(q.id, letter, q.type)}
-                        className={`flex items-start gap-3 rounded-lg border px-3 py-2 text-left text-sm transition ${
-                          isSelected
-                            ? "border-blue-500 bg-blue-50 text-blue-900 dark:border-blue-500/80 dark:bg-blue-900/40 dark:text-blue-50"
-                            : "border-gray-200 hover:border-blue-200 dark:border-gray-800 dark:hover:border-blue-500/40"
-                        } ${locked ? "opacity-50" : ""}`}
+                        className={`flex items-start gap-3 rounded-xl border-2 px-3 py-2.5 text-left text-sm font-semibold transition ${border} ${
+                          locked && !isSubmitted ? "opacity-50" : ""
+                        }`}
                       >
-                        <span className="mt-0.5 inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-xs font-semibold text-gray-700 dark:border-gray-700 dark:text-gray-200">
+                        <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-xs font-extrabold text-violet-700">
                           {letter}
                         </span>
-                        <span className="leading-snug text-gray-900 dark:text-gray-100">{choice}</span>
+                        <span className="leading-snug text-ink">{choice}</span>
+                        {isSubmitted && isCorrectChoice ? <CheckCircle2 className="ml-auto h-4 w-4 shrink-0 text-emerald-600" /> : null}
+                        {isSubmitted && isSelected && !isCorrectChoice ? <XCircle className="ml-auto h-4 w-4 shrink-0 text-rose-500" /> : null}
                       </button>
                     );
                   })}
                 </div>
-              </div>
+                {isSubmitted && !gotItRight ? (
+                  <div className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs font-semibold text-amber-800">
+                    <Lightbulb className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      {selected
+                        ? `You picked ${selected}. The correct answer was ${correctLetter || "not set"}.`
+                        : `You left this blank. The correct answer was ${correctLetter || "not set"}.`}{" "}
+                      Review this topic in your notes or flashcards before retrying similar questions.
+                    </span>
+                  </div>
+                ) : null}
+              </Card>
             );
           })
         )}
@@ -396,23 +521,25 @@ export default function StudentMockExamDetailPage() {
         <button
           type="button"
           onClick={() => router.push("/dashboard/student/mock-exam")}
-          className="rounded-full border border-gray-300 bg-white px-4 py-2 text-sm font-semibold text-gray-800 shadow-sm transition hover:bg-gray-100 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-700"
+          className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-sm font-bold text-ink shadow-sm transition hover:bg-subtle/40"
         >
           Back to exams
         </button>
-        <button
-          type="button"
-          disabled={locked || submitting || questions.length === 0 || isSubmitted}
-          onClick={() => void handleSubmit()}
-          className={`rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
-            locked || submitting || questions.length === 0 || isSubmitted
-              ? "border border-gray-300 bg-white text-gray-500 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-400"
-              : "bg-emerald-600 text-white hover:-translate-y-0.5 hover:shadow-md"
-          }`}
-        >
-          {submitting ? "Submitting..." : isSubmitted ? "Submitted" : submittedScore !== null ? "Re-submit score" : "Submit exam"}
-        </button>
-        {savingAnswer ? <span className="text-xs text-gray-500 dark:text-gray-400">Saving...</span> : null}
+        {!isSubmitted ? (
+          <button
+            type="button"
+            disabled={locked || submitting || questions.length === 0}
+            onClick={() => void handleSubmit()}
+            className={`rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition ${
+              locked || submitting || questions.length === 0
+                ? "border-2 border-subtle bg-surface text-ink-soft"
+                : "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-pop-teal hover:-translate-y-0.5"
+            }`}
+          >
+            {submitting ? "Submitting..." : "Submit exam"}
+          </button>
+        ) : null}
+        {savingAnswer ? <span className="text-xs font-semibold text-ink-soft">Saving...</span> : null}
       </div>
     </div>
   );

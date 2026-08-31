@@ -18,7 +18,7 @@ export default function ResetPasswordPage() {
         <Suspense fallback={null}>
           <ResetPasswordForm />
         </Suspense>
-        <div className="rounded-2xl border-2 border-violet-100 bg-violet-50 p-4 text-center text-sm font-semibold text-ink-soft">
+        <div className="rounded-2xl border-2 border-subtle bg-subtle/40 p-4 text-center text-sm font-semibold text-ink-soft">
           Need a new link?{" "}
           <Link href="/forgot-password" className="font-bold text-violet-700 hover:underline">
             Request another reset email.

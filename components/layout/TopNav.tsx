@@ -25,7 +25,7 @@ export function TopNav() {
               className={`rounded-full px-3 py-1.5 font-bold ${
                 pathname === '/dashboard'
                   ? 'bg-gradient-to-r from-violet-600 to-fuchsia-500 text-white shadow-pop'
-                  : 'text-ink-soft hover:bg-violet-50'
+                  : 'text-ink-soft hover:bg-subtle/40'
               }`}
             >
               Dashboard
@@ -33,12 +33,12 @@ export function TopNav() {
           </nav>
         </div>
         <div className="flex items-center gap-3 text-sm">
-          <span className="hidden rounded-full bg-violet-50 px-3 py-1.5 font-bold text-violet-700 sm:inline-flex">
+          <span className="hidden rounded-full bg-subtle/40 px-3 py-1.5 font-bold text-violet-700 dark:text-violet-300 sm:inline-flex">
             {session?.user.email ?? 'Logged in'}
           </span>
           <button
             onClick={handleSignOut}
-            className="inline-flex items-center gap-1.5 rounded-full border-2 border-violet-100 px-3 py-1.5 font-bold text-ink transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+            className="inline-flex items-center gap-1.5 rounded-full border-2 border-subtle px-3 py-1.5 font-bold text-ink transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
           >
             <LogOut className="h-4 w-4" />
             Sign out

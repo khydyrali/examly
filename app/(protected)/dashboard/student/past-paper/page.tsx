@@ -43,7 +43,7 @@ const subjectColors = [
   "from-violet-500 to-fuchsia-500",
   "from-orange-500 to-amber-400",
   "from-teal-500 to-emerald-500",
-  "from-sky-500 to-indigo-500",
+  "from-sky-500 to-violet-500",
   "from-rose-500 to-pink-500",
   "from-lime-500 to-emerald-500",
 ];
@@ -305,7 +305,7 @@ export default function StudentPastPaperPage() {
                   key={s.value}
                   type="button"
                   onClick={() => pickSubject(s.value, s.label)}
-                  className="flex items-center gap-3 rounded-2xl border-2 border-violet-100 bg-white px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md"
+                  className="flex items-center gap-3 rounded-2xl border-2 border-subtle bg-surface px-4 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-violet-300 hover:shadow-md"
                 >
                   <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${subjectColors[i % subjectColors.length]} text-white shadow-sm`}>
                     <BookOpen className="h-5 w-5" />
@@ -332,7 +332,7 @@ export default function StudentPastPaperPage() {
                   key={y}
                   type="button"
                   onClick={() => setSelectedYear(y)}
-                  className="rounded-2xl border-2 border-violet-100 bg-white px-5 py-3 font-heading text-lg font-extrabold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-violet-400 hover:bg-violet-50"
+                  className="rounded-2xl border-2 border-subtle bg-surface px-5 py-3 font-heading text-lg font-extrabold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-violet-400 hover:bg-subtle/40"
                 >
                   {y}
                 </button>
@@ -354,7 +354,7 @@ export default function StudentPastPaperPage() {
                     setSelectedSeason(s.value);
                     setSelectedSeasonName(s.label);
                   }}
-                  className="flex items-center gap-2.5 rounded-2xl border-2 border-violet-100 bg-white px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50"
+                  className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50"
                 >
                   <Icon className="h-5 w-5 text-orange-500" />
                   <span className="font-heading font-bold text-ink">{s.label}</span>
@@ -372,7 +372,7 @@ export default function StudentPastPaperPage() {
                 key={p}
                 type="button"
                 onClick={() => setSelectedPaper(p)}
-                className="flex items-center gap-2.5 rounded-2xl border-2 border-violet-100 bg-white px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50"
+                className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50"
               >
                 <FileText className="h-5 w-5 text-teal-600" />
                 <span className="font-heading font-bold text-ink">Paper {p}</span>
@@ -401,7 +401,7 @@ export default function StudentPastPaperPage() {
                     setCurrentIndex((idx) => Math.max(0, idx - 1));
                   }}
                   disabled={currentIndex === 0 || quizzes.length === 0}
-                  className="rounded-full border-2 border-violet-100 bg-white px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-violet-50 disabled:opacity-40"
+                  className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
                 >
                   Prev
                 </button>
@@ -413,7 +413,7 @@ export default function StudentPastPaperPage() {
                     setCurrentIndex((idx) => Math.min(quizzes.length - 1, idx + 1));
                   }}
                   disabled={currentIndex >= quizzes.length - 1 || quizzes.length === 0}
-                  className="rounded-full border-2 border-violet-100 bg-white px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-violet-50 disabled:opacity-40"
+                  className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
                 >
                   Next
                 </button>
@@ -452,8 +452,8 @@ export default function StudentPastPaperPage() {
                     const isSelected = selectedChoice === opt.label;
                     const isCorrect = currentQuiz.mcq_answer?.trim().toUpperCase() === opt.label;
                     const showCorrect = (showAnswer && isCorrect) || (isSelected && isCorrect);
-                    const border = isSelected ? (showCorrect ? "border-emerald-400" : "border-amber-400") : "border-violet-100";
-                    const bg = isSelected ? (showCorrect ? "bg-emerald-50" : "bg-amber-50") : "bg-white";
+                    const border = isSelected ? (showCorrect ? "border-emerald-400" : "border-amber-400") : "border-subtle";
+                    const bg = isSelected ? (showCorrect ? "bg-emerald-50" : "bg-amber-50") : "bg-surface";
                     return (
                       <button
                         key={opt.label}
@@ -480,7 +480,7 @@ export default function StudentPastPaperPage() {
                     <button
                       type="button"
                       onClick={() => setShowAnswer((prev) => !prev)}
-                      className="rounded-full border-2 border-violet-100 px-3 py-1.5 text-xs font-bold text-ink shadow-sm transition hover:bg-violet-50"
+                      className="rounded-full border-2 border-subtle px-3 py-1.5 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40"
                     >
                       {showAnswer ? "Hide answer" : "View answer"}
                     </button>

@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { GraduationCap } from "lucide-react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
+import { Card, Badge } from "@/components/ui/Card";
 
 type Option = { label: string; value: string };
 type ExamRow = {
@@ -76,7 +78,7 @@ export default function StudentMockExamListPage() {
           .from("exam")
           .select("id, created_at, title, max_score, subject_id, description, start_date, duration")
           .eq("subject_id", subjectId)
-          .order("start_date", { ascending: false }),
+          .order("created_at", { ascending: false }),
         supabase.from("exam_students").select("exam_id, score, percentage").eq("student_id", session.user.id),
       ]);
 
@@ -126,50 +128,38 @@ export default function StudentMockExamListPage() {
   );
 
   const examCounts = useMemo(() => {
-    const now = new Date().getTime();
-    let open = 0;
-    let upcoming = 0;
-    let closed = 0;
-
+    let submitted = 0;
+    let notStarted = 0;
     exams.forEach((exam) => {
-      const startsAt = exam.start_date ? new Date(exam.start_date).getTime() : null;
-      const endsAt = startsAt && exam.duration ? startsAt + exam.duration * 60_000 : null;
-
-      if (endsAt && endsAt < now) {
-        closed += 1;
-      } else if (startsAt && startsAt > now) {
-        upcoming += 1;
-      } else {
-        open += 1;
-      }
+      if (exam.score !== undefined && exam.score !== null) submitted += 1;
+      else notStarted += 1;
     });
-
-    return { open, upcoming, closed };
+    return { submitted, notStarted };
   }, [exams]);
 
   if (!session) {
     return (
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-50">Mock exams</h1>
-        <p className="text-sm text-gray-600 dark:text-gray-400">Please sign in to view exams.</p>
+        <h1 className="font-heading text-2xl font-extrabold text-ink">Mock exams</h1>
+        <p className="text-sm font-semibold text-ink-soft">Please sign in to view exams.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? <p className="text-sm font-semibold text-rose-600">{error}</p> : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-blue-600">Mock exams</p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-50">Mock exams</h1>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Select a subject, then begin any available exam at its start time.
-          </p>
+        <div className="space-y-2">
+          <Badge color="rose">
+            <GraduationCap className="h-3.5 w-3.5" /> Mock exams
+          </Badge>
+          <h1 className="font-heading text-3xl font-extrabold text-ink">Mock exams</h1>
+          <p className="text-sm font-semibold text-ink-soft">Open anytime — pick a subject and start whenever you&apos;re ready.</p>
         </div>
-        <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-200">
-          <span className="font-semibold">Subject</span>
+        <label className="flex items-center gap-2 text-sm font-bold text-ink">
+          <span>Subject</span>
           <select
             value={selectedSubject ?? ""}
             onChange={(event) => {
@@ -181,7 +171,7 @@ export default function StudentMockExamListPage() {
                 localStorage.setItem("subject_id", value);
               }
             }}
-            className="rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-700 dark:bg-neutral-900 dark:text-gray-50"
+            className="rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm font-semibold text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
           >
             <option value="">Select subject</option>
             {subjects.map((s) => (
@@ -193,77 +183,56 @@ export default function StudentMockExamListPage() {
         </label>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white/90 p-4 shadow-sm dark:border-gray-800 dark:bg-neutral-900">
+      <Card className="p-5">
         <div className="flex items-center justify-between">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-blue-600">{subjectLabel || "Select a subject"}</div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-xs font-extrabold uppercase tracking-wide text-violet-600">{subjectLabel || "Select a subject"}</div>
+            <p className="text-sm font-semibold text-ink-soft">
               {loading
                 ? "Loading exams..."
-                : `Open: ${examCounts.open} · Upcoming: ${examCounts.upcoming} · Closed: ${examCounts.closed} · Total: ${exams.length}`}
+                : `Not started: ${examCounts.notStarted} · Submitted: ${examCounts.submitted} · Total: ${exams.length}`}
             </p>
           </div>
         </div>
 
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
           {loading ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white/70 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+            <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft lg:col-span-2">
               Loading exams...
             </div>
           ) : exams.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-gray-300 bg-white/70 p-6 text-center text-sm text-gray-600 dark:border-gray-700 dark:bg-neutral-950/50 dark:text-gray-300">
+            <div className="rounded-2xl border-2 border-dashed border-subtle-strong bg-subtle/50 p-6 text-center text-sm font-semibold text-ink-soft lg:col-span-2">
               No exams yet for this subject.
             </div>
           ) : (
             exams.map((exam) => {
-              const startsAt = exam.start_date ? new Date(exam.start_date) : null;
-              const now = new Date();
-              const endsAt = startsAt && exam.duration ? new Date(startsAt.getTime() + exam.duration * 60_000) : null;
-              const isUpcoming = startsAt ? startsAt.getTime() > now.getTime() : false;
-              const isClosed = endsAt ? endsAt.getTime() < now.getTime() : false;
-              const canStart = !isClosed && !isUpcoming;
+              const isSubmitted = exam.score !== undefined && exam.score !== null;
               return (
                 <div
                   key={exam.id}
-                  className="flex flex-col gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-neutral-900"
+                  className="flex flex-col gap-3 rounded-2xl border-2 border-subtle bg-surface p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
                 >
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-50">{exam.title ?? `Exam ${exam.id}`}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        {startsAt ? startsAt.toLocaleString() : "No start date"} · {exam.duration ?? 0} min
-                      </p>
+                      <h3 className="font-heading text-lg font-bold text-ink">{exam.title ?? `Exam ${exam.id}`}</h3>
+                      <p className="text-sm font-semibold text-ink-soft">{exam.duration ?? 0} min · Max score {exam.max_score ?? 0}</p>
                     </div>
-                    <div className="text-right text-sm text-gray-600 dark:text-gray-400">
-                      <div>Max score: {exam.max_score ?? 0}</div>
-                      {exam.score !== undefined ? (
-                        <div>
-                          Your score: {exam.score ?? 0}
-                          {exam.percentage !== null && exam.percentage !== undefined ? ` (${exam.percentage}% )` : ""}
-                        </div>
-                      ) : null}
-                    </div>
+                    {isSubmitted ? (
+                      <div className="text-right text-sm font-bold text-ink">
+                        {exam.score ?? 0}
+                        {exam.percentage !== null && exam.percentage !== undefined ? ` (${exam.percentage}%)` : ""}
+                      </div>
+                    ) : null}
                   </div>
-                  {exam.description ? <p className="text-sm text-gray-700 dark:text-gray-300">{exam.description}</p> : null}
+                  {exam.description ? <p className="text-sm font-semibold text-ink-soft">{exam.description}</p> : null}
                   <div className="flex items-center justify-between">
-                    <span
-                      className={`text-xs font-semibold uppercase tracking-wide ${
-                        isClosed ? "text-gray-500" : isUpcoming ? "text-amber-600" : "text-emerald-600"
-                      }`}
-                    >
-                      {isClosed ? "Closed" : isUpcoming ? "Upcoming" : "Open"}
-                    </span>
+                    <Badge color={isSubmitted ? "teal" : "yellow"}>{isSubmitted ? "Submitted" : "Open · Not started"}</Badge>
                     <button
                       type="button"
-                      disabled={!canStart}
                       onClick={() => router.push(`/dashboard/student/mock-exam/${exam.id}`)}
-                      className={`rounded-full px-4 py-2 text-sm font-semibold shadow-sm transition ${
-                        canStart
-                          ? "bg-blue-600 text-white hover:-translate-y-0.5 hover:shadow-md"
-                          : "border border-gray-300 bg-white text-gray-500 dark:border-gray-700 dark:bg-neutral-800 dark:text-gray-400"
-                      }`}
+                      className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-sm font-bold text-white shadow-pop transition hover:-translate-y-0.5"
                     >
-                      {canStart ? (exam.score !== undefined ? "Resume / Review" : "Begin exam") : "Not open yet"}
+                      {isSubmitted ? "View results" : "Begin exam"}
                     </button>
                   </div>
                 </div>
@@ -271,7 +240,7 @@ export default function StudentMockExamListPage() {
             })
           )}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

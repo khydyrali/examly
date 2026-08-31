@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import {
+  Award,
   BookOpen,
   ChevronLeft,
   ChevronRight,
@@ -14,7 +15,12 @@ import {
   Layers,
   ListTree,
   Menu,
+  Newspaper,
   ScrollText,
+  Target,
+  Trophy,
+  UserCog,
+  Users,
   X,
 } from "lucide-react";
 import { useSupabase } from "../providers/SupabaseProvider";
@@ -29,11 +35,15 @@ type IconName =
   | "chapter"
   | "student-note"
   | "student-flash"
-  | "student-quiz"
-  | "student-frq"
   | "student-exam"
   | "past-paper"
-  | "lesson";
+  | "lesson"
+  | "blog"
+  | "tutors"
+  | "leaderboard"
+  | "tutor-profile"
+  | "achievements"
+  | "practice";
 
 type NavItem = { href: string; label: string; icon: IconName };
 type NavSection = { title: string; items: NavItem[] };
@@ -47,11 +57,15 @@ const icons: Record<IconName, typeof Home> = {
   chapter: ListTree,
   "student-note": ScrollText,
   "student-flash": Layers,
-  "student-quiz": FileQuestion,
-  "student-frq": ClipboardList,
   "student-exam": GraduationCap,
   "past-paper": BookOpen,
   lesson: BookOpen,
+  blog: Newspaper,
+  tutors: Users,
+  leaderboard: Trophy,
+  "tutor-profile": UserCog,
+  achievements: Award,
+  practice: Target,
 };
 
 const navSections: NavSection[] = [
@@ -72,15 +86,22 @@ const navSections: NavSection[] = [
       { href: "/dashboard/student", label: "Dashboard", icon: "home" },
       { href: "/dashboard/student/note", label: "Notes", icon: "student-note" },
       { href: "/dashboard/student/flashcard", label: "Flashcards", icon: "student-flash" },
-      { href: "/dashboard/student/quiz", label: "Exam Topical", icon: "student-quiz" },
-      { href: "/dashboard/student/quiz-frq", label: "Free Response", icon: "student-frq" },
+      { href: "/dashboard/student/practice", label: "Practice", icon: "practice" },
       { href: "/dashboard/student/mock-exam", label: "Mock Exams", icon: "student-exam" },
       { href: "/dashboard/student/past-paper", label: "Past Papers", icon: "past-paper" },
+      { href: "/dashboard/student/leaderboard", label: "Leaderboard", icon: "leaderboard" },
+      { href: "/dashboard/student/achievements", label: "Achievements", icon: "achievements" },
+      { href: "/dashboard/student/tutors", label: "Find a Tutor", icon: "tutors" },
+      { href: "/dashboard/student/blog", label: "Blog", icon: "blog" },
     ],
   },
   {
     title: "Teacher",
-    items: [{ href: "/dashboard/lesson", label: "Lessons", icon: "lesson" }],
+    items: [
+      { href: "/dashboard/lesson", label: "Lessons", icon: "lesson" },
+      { href: "/dashboard/tutor/profile", label: "Tutor Profile", icon: "tutor-profile" },
+      { href: "/dashboard/tutor/blog", label: "My Blog", icon: "blog" },
+    ],
   },
 ];
 
@@ -149,7 +170,7 @@ export function Sidebar() {
       <button
         type="button"
         onClick={() => setMobileOpen(true)}
-        className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border-2 border-violet-100 bg-white text-violet-700 shadow-md md:hidden"
+        className="fixed left-3 top-3 z-40 flex h-10 w-10 items-center justify-center rounded-full border-2 border-subtle bg-surface text-violet-700 dark:text-violet-300 shadow-md md:hidden"
         aria-label="Open navigation"
       >
         <Menu className="h-5 w-5" />
@@ -173,7 +194,7 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => setCollapsed((prev) => !prev)}
-                className="hidden h-9 w-9 items-center justify-center rounded-full border-2 border-violet-100 bg-white text-violet-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:flex"
+                className="hidden h-9 w-9 items-center justify-center rounded-full border-2 border-subtle bg-surface text-violet-700 dark:text-violet-300 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md md:flex"
                 aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
                 title={collapsed ? "Expand navigation" : "Collapse navigation"}
               >
@@ -182,7 +203,7 @@ export function Sidebar() {
               <button
                 type="button"
                 onClick={() => setMobileOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-violet-100 bg-white text-violet-700 shadow-sm md:hidden"
+                className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-subtle bg-surface text-violet-700 dark:text-violet-300 shadow-sm md:hidden"
                 aria-label="Close navigation"
               >
                 <X className="h-4 w-4" />
@@ -201,7 +222,7 @@ export function Sidebar() {
                     const Icon = icons[item.icon] ?? Home;
                     const activeClasses = item.active
                       ? "bg-gradient-to-r from-violet-600 via-fuchsia-500 to-orange-500 text-white shadow-pop"
-                      : "bg-white text-ink hover:bg-violet-50";
+                      : "bg-surface text-ink hover:bg-subtle/40";
                     const iconClasses = item.active ? "text-white" : "text-violet-600";
                     return (
                       <Link key={item.href} href={item.href} onClick={handleNavClick} className={`${linkBase} ${activeClasses}`}>

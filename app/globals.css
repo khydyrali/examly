@@ -16,6 +16,8 @@
   --color-surface-muted: #f4f1ff;
   --color-ink: #241b40;
   --color-ink-soft: #5b5478;
+  --subtle: #ede9fe;
+  --subtle-strong: #ddd6fe;
 }
 
 @theme inline {
@@ -33,6 +35,8 @@
   --color-surface-muted: var(--color-surface-muted);
   --color-ink: var(--color-ink);
   --color-ink-soft: var(--color-ink-soft);
+  --color-subtle: var(--subtle);
+  --color-subtle-strong: var(--subtle-strong);
   --font-sans: var(--font-nunito);
   --font-heading: var(--font-baloo);
 }
@@ -45,6 +49,8 @@
     --color-surface-muted: #251d42;
     --color-ink: #f4f1ff;
     --color-ink-soft: #c7bfe6;
+    --subtle: rgba(139, 92, 246, 0.28);
+    --subtle-strong: rgba(139, 92, 246, 0.4);
   }
 }
 

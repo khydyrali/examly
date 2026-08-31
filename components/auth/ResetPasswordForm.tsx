@@ -40,7 +40,7 @@ export function ResetPasswordForm() {
 
   if (!isReady) {
     return (
-      <div className="w-full max-w-md rounded-3xl border-2 border-violet-100 bg-white p-6 text-center shadow-pop">
+      <div className="w-full max-w-md rounded-3xl border-2 border-subtle bg-surface p-6 text-center shadow-pop">
         <p className="text-sm font-semibold text-ink-soft">Preparing secure reset…</p>
       </div>
     );
@@ -48,14 +48,14 @@ export function ResetPasswordForm() {
 
   if (!session) {
     return (
-      <div className="w-full max-w-md space-y-4 rounded-3xl border-2 border-violet-100 bg-white p-6 text-center shadow-pop">
+      <div className="w-full max-w-md space-y-4 rounded-3xl border-2 border-subtle bg-surface p-6 text-center shadow-pop">
         <h2 className="font-heading text-xl font-extrabold text-ink">Reset link expired</h2>
         <p className="text-sm font-semibold text-ink-soft">Request a new password reset link to continue.</p>
         <div className="flex justify-center gap-3 text-sm font-bold">
           <Link href="/forgot-password" className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-white shadow-pop">
             Send new link
           </Link>
-          <Link href="/login" className="rounded-full border-2 border-violet-100 bg-white px-4 py-2 text-ink">
+          <Link href="/login" className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-ink">
             Back to login
           </Link>
         </div>
@@ -64,7 +64,7 @@ export function ResetPasswordForm() {
   }
 
   return (
-    <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-violet-100 bg-white p-6 shadow-pop sm:p-7">
+    <div className="w-full max-w-md space-y-5 rounded-3xl border-2 border-subtle bg-surface p-6 shadow-pop sm:p-7">
       <div className="space-y-1 text-center">
         <h2 className="font-heading text-2xl font-extrabold text-ink">Set a new password</h2>
         <p className="text-sm font-semibold text-ink-soft">You reached this screen from a secure reset link.</p>
@@ -79,7 +79,7 @@ export function ResetPasswordForm() {
             minLength={6}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-xl border-2 border-violet-100 bg-white px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
             placeholder="At least 6 characters"
           />
         </div>
@@ -91,7 +91,7 @@ export function ResetPasswordForm() {
             minLength={6}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-xl border-2 border-violet-100 bg-white px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
+            className="w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2.5 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
             placeholder="Repeat password"
           />
         </div>

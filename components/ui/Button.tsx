@@ -10,8 +10,8 @@ const variantClasses: Record<Variant, string> = {
   secondary:
     "bg-gradient-to-r from-teal-500 to-emerald-500 text-white shadow-pop-teal hover:brightness-105",
   outline:
-    "border-2 border-violet-200 bg-white text-violet-700 hover:border-violet-400 hover:bg-violet-50",
-  ghost: "text-ink hover:bg-violet-50",
+    "border-2 border-subtle-strong bg-surface text-violet-700 dark:text-violet-300 hover:border-violet-400 hover:bg-subtle/40",
+  ghost: "text-ink hover:bg-subtle/40",
 };
 
 const sizeClasses: Record<Size, string> = {
