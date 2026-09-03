@@ -49,6 +49,27 @@ type ChildRow = {
   max_score: number | null;
 };
 
+type GradeResult = {
+  marksAwarded: number;
+  maxMarks: number;
+  feedback: string;
+  strengths: string[];
+  improvements: string[];
+};
+
+type GradingState = {
+  loading: boolean;
+  error: string | null;
+  result: GradeResult | null;
+};
+
+function stripHtml(html: string | null): string {
+  if (!html) return "";
+  if (typeof window === "undefined") return html.replace(/<[^>]*>/g, " ").trim();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  return (doc.body.textContent ?? "").trim();
+}
+
 function HtmlBlock({ html }: { html: string | null }) {
   if (!html) return <p className="text-sm font-semibold text-ink-soft">No content provided.</p>;
   return (
@@ -115,6 +136,40 @@ function HtmlBlock({ html }: { html: string | null }) {
         }
       `}</style>
     </>
+  );
+}
+
+function GradeResultCard({ result }: { result: GradeResult }) {
+  return (
+    <div className="mt-3 space-y-2 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3 dark:border-violet-900/40 dark:bg-violet-950/20">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-extrabold uppercase tracking-wide text-violet-700">AI marking result</p>
+        <Badge color="teal">
+          {result.marksAwarded} / {result.maxMarks} marks
+        </Badge>
+      </div>
+      {result.feedback ? <p className="text-sm text-ink">{result.feedback}</p> : null}
+      {result.strengths?.length ? (
+        <div>
+          <p className="text-xs font-bold text-emerald-700">Strengths</p>
+          <ul className="ml-4 list-disc text-sm text-ink">
+            {result.strengths.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+      {result.improvements?.length ? (
+        <div>
+          <p className="text-xs font-bold text-amber-700">Improvements</p>
+          <ul className="ml-4 list-disc text-sm text-ink">
+            {result.improvements.map((s, i) => (
+              <li key={i}>{s}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
@@ -215,6 +270,7 @@ function PracticePageInner() {
   const [frqError, setFrqError] = useState<string | null>(null);
   const [openMarkSchemes, setOpenMarkSchemes] = useState<Set<number>>(new Set());
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [gradingState, setGradingState] = useState<Record<string, GradingState>>({});
 
   useEffect(() => {
     const storedId = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
@@ -479,6 +535,46 @@ function PracticePageInner() {
   };
   const handleAnswerChange = (key: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleMarkAnswer = async (key: string, question: string | null, markScheme: string | null, maxMarks: number | null) => {
+    const studentAnswer = (answers[key] ?? "").trim();
+    if (!studentAnswer) {
+      setGradingState((prev) => ({ ...prev, [key]: { loading: false, error: "Write an answer before requesting AI marking.", result: null } }));
+      return;
+    }
+    setGradingState((prev) => ({ ...prev, [key]: { loading: true, error: null, result: prev[key]?.result ?? null } }));
+    try {
+      const res = await fetch("/api/grade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          question: stripHtml(question) || undefined,
+          markScheme: stripHtml(markScheme),
+          studentAnswer,
+          maxMarks: maxMarks ?? undefined,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const message =
+          res.status === 503
+            ? "The AI grader is busy right now. Please try again in a moment."
+            : res.status === 401
+              ? "You need to be signed in to use AI marking."
+              : res.status === 502 || res.status === 504
+                ? "Grading timed out. Please try again."
+                : (data?.error ?? "Something went wrong while grading your answer.");
+        setGradingState((prev) => ({ ...prev, [key]: { loading: false, error: message, result: null } }));
+        return;
+      }
+      setGradingState((prev) => ({ ...prev, [key]: { loading: false, error: null, result: data as GradeResult } }));
+    } catch {
+      setGradingState((prev) => ({ ...prev, [key]: { loading: false, error: "Network error while grading your answer.", result: null } }));
+    }
   };
 
   const handleModeChange = (next: Mode) => {
@@ -802,50 +898,90 @@ function PracticePageInner() {
 
                     <div className="space-y-3">
                       {childRows.length === 0 ? (
-                        <p className="text-sm font-semibold text-ink-soft">No child questions for this parent.</p>
-                      ) : (
-                        childRows.map((child) => (
-                          <Card key={child.id} className="p-4">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {child.max_score ? <Badge color="teal">Score: {child.max_score}</Badge> : null}
-                              </div>
-                              <button
-                                type="button"
-                                onClick={() => toggleMarkScheme(child.id)}
-                                className="text-xs font-bold text-violet-700 hover:underline"
-                              >
-                                {openMarkSchemes.has(child.id) ? "Hide mark scheme" : "Show mark scheme"}
-                              </button>
-                            </div>
-                            <div className="mt-2 text-sm text-ink">
-                              {child.question ? <HtmlBlock html={child.question} /> : <span>No question text.</span>}
-                            </div>
-                            {child.mark_scheme && openMarkSchemes.has(child.id) ? (
-                              <div className="mt-3 rounded-2xl border-2 border-subtle bg-subtle/50 p-3 text-sm text-ink">
-                                <HtmlBlock html={child.mark_scheme} />
-                              </div>
-                            ) : null}
+                        parent.mark_scheme ? (
+                          <Card className="p-4">
                             <div className="mt-3">
                               <label className="text-sm font-bold text-ink">Your answer</label>
                               <textarea
-                                value={answers[`child-${child.id}`] ?? ""}
-                                onChange={(e) => handleAnswerChange(`child-${child.id}`, e.target.value)}
+                                value={answers[`parent-${parent.id}`] ?? ""}
+                                onChange={(e) => handleAnswerChange(`parent-${parent.id}`, e.target.value)}
                                 placeholder="Type your response..."
                                 className="mt-2 w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
                                 rows={3}
                               />
-                              <div className="mt-2 flex justify-end">
+                              <div className="mt-2 flex items-center justify-between gap-3">
+                                {gradingState[`parent-${parent.id}`]?.error ? (
+                                  <p className="text-xs font-semibold text-rose-600">{gradingState[`parent-${parent.id}`].error}</p>
+                                ) : (
+                                  <span />
+                                )}
                                 <button
                                   type="button"
-                                  className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-pop transition hover:-translate-y-0.5"
+                                  disabled={gradingState[`parent-${parent.id}`]?.loading}
+                                  onClick={() => handleMarkAnswer(`parent-${parent.id}`, parent.question, parent.mark_scheme, parent.max_score)}
+                                  className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
                                 >
-                                  Mark my answer
+                                  {gradingState[`parent-${parent.id}`]?.loading ? "Marking..." : "Mark my answer"}
                                 </button>
                               </div>
+                              {gradingState[`parent-${parent.id}`]?.result ? (
+                                <GradeResultCard result={gradingState[`parent-${parent.id}`].result as GradeResult} />
+                              ) : null}
                             </div>
                           </Card>
-                        ))
+                        ) : (
+                          <p className="text-sm font-semibold text-ink-soft">No child questions for this parent.</p>
+                        )
+                      ) : (
+                        childRows.map((child) => {
+                          const key = `child-${child.id}`;
+                          return (
+                            <Card key={child.id} className="p-4">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {child.max_score ? <Badge color="teal">Score: {child.max_score}</Badge> : null}
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => toggleMarkScheme(child.id)}
+                                  className="text-xs font-bold text-violet-700 hover:underline"
+                                >
+                                  {openMarkSchemes.has(child.id) ? "Hide mark scheme" : "Show mark scheme"}
+                                </button>
+                              </div>
+                              <div className="mt-2 text-sm text-ink">
+                                {child.question ? <HtmlBlock html={child.question} /> : <span>No question text.</span>}
+                              </div>
+                              {child.mark_scheme && openMarkSchemes.has(child.id) ? (
+                                <div className="mt-3 rounded-2xl border-2 border-subtle bg-subtle/50 p-3 text-sm text-ink">
+                                  <HtmlBlock html={child.mark_scheme} />
+                                </div>
+                              ) : null}
+                              <div className="mt-3">
+                                <label className="text-sm font-bold text-ink">Your answer</label>
+                                <textarea
+                                  value={answers[key] ?? ""}
+                                  onChange={(e) => handleAnswerChange(key, e.target.value)}
+                                  placeholder="Type your response..."
+                                  className="mt-2 w-full rounded-xl border-2 border-subtle bg-surface px-3 py-2 text-sm text-ink shadow-sm focus:border-violet-400 focus:outline-none focus:ring-4 focus:ring-violet-100"
+                                  rows={3}
+                                />
+                                <div className="mt-2 flex items-center justify-between gap-3">
+                                  {gradingState[key]?.error ? <p className="text-xs font-semibold text-rose-600">{gradingState[key].error}</p> : <span />}
+                                  <button
+                                    type="button"
+                                    disabled={gradingState[key]?.loading}
+                                    onClick={() => handleMarkAnswer(key, child.question, child.mark_scheme, child.max_score)}
+                                    className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-2 text-xs font-bold text-white shadow-pop transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-60"
+                                  >
+                                    {gradingState[key]?.loading ? "Marking..." : "Mark my answer"}
+                                  </button>
+                                </div>
+                                {gradingState[key]?.result ? <GradeResultCard result={gradingState[key].result as GradeResult} /> : null}
+                              </div>
+                            </Card>
+                          );
+                        })
                       )}
                     </div>
                   </div>
