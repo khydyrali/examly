@@ -587,7 +587,7 @@ function PracticePageInner() {
       setGradingState((prev) => ({ ...prev, [key]: { loading: false, error: "Write an answer before requesting AI marking.", result: null } }));
       return;
     }
-    setGradingState((prev) => ({ ...prev, [key]: { loading: true, error: null, result: prev[key]?.result ?? null } }));
+    setGradingState((prev) => ({ ...prev, [key]: { loading: true, error: null, result: null } }));
     try {
       const res = await fetch("/api/grade", {
         method: "POST",
