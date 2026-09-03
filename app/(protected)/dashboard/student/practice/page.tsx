@@ -139,6 +139,50 @@ function HtmlBlock({ html }: { html: string | null }) {
   );
 }
 
+const MARKING_MESSAGES = [
+  "Reading your answer...",
+  "Comparing against the mark scheme...",
+  "Checking for key terms and evidence...",
+  "Weighing strengths and improvements...",
+  "Making sure you get the best feedback...",
+  "Polishing your feedback...",
+];
+
+function MarkingLoader() {
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [tokens, setTokens] = useState(0);
+
+  useEffect(() => {
+    const messageTimer = setInterval(() => {
+      setMessageIndex((i) => (i + 1) % MARKING_MESSAGES.length);
+    }, 1800);
+    const tokenTimer = setInterval(() => {
+      setTokens((t) => {
+        if (t >= 4200) return t;
+        const step = t < 600 ? 41 : t < 1800 ? 23 : t < 3200 ? 11 : 3;
+        return Math.min(t + step, 4200);
+      });
+    }, 120);
+    return () => {
+      clearInterval(messageTimer);
+      clearInterval(tokenTimer);
+    };
+  }, []);
+
+  return (
+    <div className="mt-3 space-y-2 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3 dark:border-violet-900/40 dark:bg-violet-950/20">
+      <div className="flex items-center gap-2">
+        <span className="relative flex h-2 w-2">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-600" />
+        </span>
+        <p className="text-xs font-extrabold uppercase tracking-wide text-violet-700">{MARKING_MESSAGES[messageIndex]}</p>
+      </div>
+      <p className="text-[11px] font-semibold text-violet-500">~{tokens.toLocaleString()} tokens analyzed</p>
+    </div>
+  );
+}
+
 function GradeResultCard({ result }: { result: GradeResult }) {
   return (
     <div className="mt-3 space-y-2 rounded-2xl border-2 border-violet-200 bg-violet-50 p-3 dark:border-violet-900/40 dark:bg-violet-950/20">
@@ -926,6 +970,8 @@ function PracticePageInner() {
                               </div>
                               {gradingState[`parent-${parent.id}`]?.result ? (
                                 <GradeResultCard result={gradingState[`parent-${parent.id}`].result as GradeResult} />
+                              ) : gradingState[`parent-${parent.id}`]?.loading ? (
+                                <MarkingLoader />
                               ) : null}
                             </div>
                           </Card>
@@ -977,7 +1023,11 @@ function PracticePageInner() {
                                     {gradingState[key]?.loading ? "Marking..." : "Mark my answer"}
                                   </button>
                                 </div>
-                                {gradingState[key]?.result ? <GradeResultCard result={gradingState[key].result as GradeResult} /> : null}
+                                {gradingState[key]?.result ? (
+                                  <GradeResultCard result={gradingState[key].result as GradeResult} />
+                                ) : gradingState[key]?.loading ? (
+                                  <MarkingLoader />
+                                ) : null}
                               </div>
                             </Card>
                           );
