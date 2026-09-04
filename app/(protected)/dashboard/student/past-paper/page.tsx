@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
@@ -32,12 +32,7 @@ type QuizRow = {
   season?: { name?: string | null } | null;
 };
 
-type MetaRow = {
-  year: string | null;
-  season_id: number | null;
-  paper: string | null;
-  season: { name?: string | null } | null;
-};
+type LookupRow = { id: number; name: string | null };
 
 const subjectColors = [
   "from-violet-500 to-fuchsia-500",
@@ -53,6 +48,14 @@ function seasonIcon(name: string) {
   if (lower.includes("may") || lower.includes("jun")) return Sun;
   if (lower.includes("oct") || lower.includes("nov")) return Leaf;
   return Snowflake;
+}
+
+function seasonSortKey(name: string) {
+  const lower = name.toLowerCase();
+  if (lower.includes("mar")) return 0;
+  if (lower.includes("may") || lower.includes("jun")) return 1;
+  if (lower.includes("oct") || lower.includes("nov")) return 2;
+  return 3;
 }
 
 function HtmlBlock({ html }: { html: string | null }) {
@@ -133,8 +136,10 @@ export default function StudentPastPaperPage() {
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
 
-  const [meta, setMeta] = useState<MetaRow[]>([]);
-  const [metaLoading, setMetaLoading] = useState(false);
+  const [years, setYears] = useState<Option[]>([]);
+  const [seasons, setSeasons] = useState<Option[]>([]);
+  const [papers, setPapers] = useState<Option[]>([]);
+  const [lookupsLoading, setLookupsLoading] = useState(true);
 
   const [selectedYear, setSelectedYear] = useState<string>("");
   const [selectedSeason, setSelectedSeason] = useState<string>("");
@@ -163,46 +168,39 @@ export default function StudentPastPaperPage() {
   }, [supabase]);
 
   useEffect(() => {
-    if (!selectedSubject) return;
-    const loadMeta = async () => {
-      setMetaLoading(true);
-      const { data } = await supabase
-        .from("quiz")
-        .select("year, season_id, paper, season:season_id(name)")
-        .eq("subject_id", Number(selectedSubject));
-      setMeta((data as unknown as MetaRow[]) ?? []);
-      setMetaLoading(false);
+    const loadLookups = async () => {
+      setLookupsLoading(true);
+      const [{ data: yearData }, { data: seasonData }, { data: paperData }] = await Promise.all([
+        supabase.from("year").select("id, name"),
+        supabase.from("season").select("id, name"),
+        supabase.from("paper").select("id, name"),
+      ]);
+
+      const yearRows = (yearData as LookupRow[]) ?? [];
+      setYears(
+        yearRows
+          .map((y) => ({ label: y.name ?? String(y.id), value: y.name ?? String(y.id) }))
+          .sort((a, b) => b.label.localeCompare(a.label, undefined, { numeric: true })),
+      );
+
+      const seasonRows = (seasonData as LookupRow[]) ?? [];
+      setSeasons(
+        seasonRows
+          .map((s) => ({ label: s.name ?? String(s.id), value: String(s.id) }))
+          .sort((a, b) => seasonSortKey(a.label) - seasonSortKey(b.label)),
+      );
+
+      const paperRows = (paperData as LookupRow[]) ?? [];
+      setPapers(
+        paperRows
+          .map((p) => ({ label: p.name ?? String(p.id), value: p.name ?? String(p.id) }))
+          .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })),
+      );
+
+      setLookupsLoading(false);
     };
-    void loadMeta();
-  }, [selectedSubject, supabase]);
-
-  const years = useMemo(() => {
-    const set = new Set<string>();
-    meta.forEach((m) => {
-      if (m.year) set.add(m.year);
-    });
-    return Array.from(set).sort((a, b) => b.localeCompare(a));
-  }, [meta]);
-
-  const seasonsForYear = useMemo(() => {
-    const map = new Map<string, string>();
-    meta
-      .filter((m) => m.year === selectedYear)
-      .forEach((m) => {
-        if (m.season_id != null) map.set(String(m.season_id), m.season?.name || `Session ${m.season_id}`);
-      });
-    return Array.from(map.entries()).map(([value, label]) => ({ value, label }));
-  }, [meta, selectedYear]);
-
-  const papersForSeason = useMemo(() => {
-    const set = new Set<string>();
-    meta
-      .filter((m) => m.year === selectedYear && String(m.season_id ?? "") === selectedSeason)
-      .forEach((m) => {
-        if (m.paper) set.add(m.paper);
-      });
-    return Array.from(set).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-  }, [meta, selectedYear, selectedSeason]);
+    void loadLookups();
+  }, [supabase]);
 
   useEffect(() => {
     if (!selectedSubject || !selectedYear || !selectedSeason || !selectedPaper) return;
@@ -321,20 +319,20 @@ export default function StudentPastPaperPage() {
           <p className="mb-4 flex items-center gap-2 text-sm font-bold text-ink-soft">
             <Calendar className="h-4 w-4" /> Choose a year for {selectedSubjectName}
           </p>
-          {metaLoading ? (
+          {lookupsLoading ? (
             <p className="text-sm font-semibold text-ink-soft">Loading years…</p>
           ) : years.length === 0 ? (
-            <p className="text-sm font-semibold text-ink-soft">No past papers indexed for this subject yet.</p>
+            <p className="text-sm font-semibold text-ink-soft">No years configured yet.</p>
           ) : (
             <div className="flex flex-wrap gap-2.5">
               {years.map((y) => (
                 <button
-                  key={y}
+                  key={y.value}
                   type="button"
-                  onClick={() => setSelectedYear(y)}
+                  onClick={() => setSelectedYear(y.value)}
                   className="rounded-2xl border-2 border-subtle bg-surface px-5 py-3 font-heading text-lg font-extrabold text-ink shadow-sm transition hover:-translate-y-0.5 hover:border-violet-400 hover:bg-subtle/40"
                 >
-                  {y}
+                  {y.label}
                 </button>
               ))}
             </div>
@@ -344,7 +342,7 @@ export default function StudentPastPaperPage() {
         <Card className="p-6">
           <p className="mb-4 text-sm font-bold text-ink-soft">Choose a session for {selectedYear}</p>
           <div className="flex flex-wrap gap-3">
-            {seasonsForYear.map((s) => {
+            {seasons.map((s) => {
               const Icon = seasonIcon(s.label);
               return (
                 <button
@@ -367,15 +365,15 @@ export default function StudentPastPaperPage() {
         <Card className="p-6">
           <p className="mb-4 text-sm font-bold text-ink-soft">Choose a paper for {selectedYear} &middot; {selectedSeasonName}</p>
           <div className="flex flex-wrap gap-3">
-            {papersForSeason.map((p) => (
+            {papers.map((p) => (
               <button
-                key={p}
+                key={p.value}
                 type="button"
-                onClick={() => setSelectedPaper(p)}
+                onClick={() => setSelectedPaper(p.value)}
                 className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50"
               >
                 <FileText className="h-5 w-5 text-teal-600" />
-                <span className="font-heading font-bold text-ink">Paper {p}</span>
+                <span className="font-heading font-bold text-ink">Paper {p.label}</span>
               </button>
             ))}
           </div>
@@ -424,6 +422,29 @@ export default function StudentPastPaperPage() {
             </div>
           </Card>
 
+          {!loading && quizzes.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {quizzes.map((q, i) => (
+                <button
+                  key={q.id}
+                  type="button"
+                  onClick={() => {
+                    setSelectedChoice(null);
+                    setShowAnswer(false);
+                    setCurrentIndex(i);
+                  }}
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold shadow-sm transition ${
+                    i === currentIndex
+                      ? "border-violet-500 bg-violet-500 text-white"
+                      : "border-subtle bg-surface text-ink hover:border-violet-300"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+            </div>
+          ) : null}
+
           {loading ? (
             <Card className="p-6 text-center text-sm font-semibold text-ink-soft">Loading questions…</Card>
           ) : !currentQuiz ? (
@@ -434,7 +455,7 @@ export default function StudentPastPaperPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Question</p>
-                    <h3 className="font-heading text-lg font-bold text-ink">{currentQuiz.num ? `Q${currentQuiz.num}` : "Question"}</h3>
+                    <h3 className="font-heading text-lg font-bold text-ink">{`Q${currentIndex + 1}`}</h3>
                   </div>
                   {currentQuiz.mcq_answer && showAnswer ? (
                     <Badge color="teal">Correct: {currentQuiz.mcq_answer}</Badge>
