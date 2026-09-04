@@ -25,8 +25,6 @@ type QuizRow = {
   mark_scheme?: string | null;
   num?: string | null;
   year?: string | null;
-  season_id?: number | null;
-  paper?: string | null;
 };
 
 type ParentRow = {
@@ -34,7 +32,6 @@ type ParentRow = {
   question: string | null;
   num: string | null;
   year: string | null;
-  season_id: number | null;
   paper: string | null;
   chapter_id: number | null;
   mark_scheme: string | null;
@@ -397,7 +394,7 @@ function PracticePageInner() {
       setSelectedChoice(null);
       const { data, error } = await supabase
         .from("quiz")
-        .select("id, chapter_id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year, season_id, paper")
+        .select("id, chapter_id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year")
         .eq("subject_id", Number(selectedSubject))
         .order("chapter_id", { ascending: true })
         .order("num", { ascending: true })
@@ -428,7 +425,7 @@ function PracticePageInner() {
 
       let parentQuery = supabase
         .from("quiz_frq")
-        .select("id, question, num, year, season_id, paper, chapter_id, mark_scheme, max_score, parent_id")
+        .select("id, question, num, year, paper, chapter_id, mark_scheme, max_score, parent_id")
         .eq("subject_id", Number(selectedSubject))
         .is("parent_id", null)
         .order("id", { ascending: true });
@@ -800,9 +797,7 @@ function PracticePageInner() {
                       <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Question</p>
                       <h3 className="font-heading text-base font-bold text-ink">
                         {currentQuiz.num ? `Q${currentQuiz.num}` : "Question"}{" "}
-                        <span className="text-sm font-semibold text-ink-soft">
-                          {currentQuiz.year ? `| ${currentQuiz.year}` : ""} {currentQuiz.paper ? `| Paper ${currentQuiz.paper}` : ""}
-                        </span>
+                        <span className="text-sm font-semibold text-ink-soft">{currentQuiz.year ? `| ${currentQuiz.year}` : ""}</span>
                       </h3>
                     </div>
                     {currentQuiz.mcq_answer && showAnswer ? <Badge color="teal">Correct: {currentQuiz.mcq_answer}</Badge> : null}
@@ -894,7 +889,6 @@ function PracticePageInner() {
                         <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-ink-soft">
                           {parent.num ? <Badge color="violet">Q{parent.num}</Badge> : null}
                           {parent.year ? <Badge color="violet">Year {parent.year}</Badge> : null}
-                          {parent.season_id ? <Badge color="violet">Season {parent.season_id}</Badge> : null}
                           {parent.paper ? <Badge color="violet">Paper {parent.paper}</Badge> : null}
                           {parent.max_score ? <Badge color="teal">Score: {parent.max_score}</Badge> : null}
                         </div>

@@ -1,16 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import {
-  ArrowLeft,
-  BookOpen,
-  Calendar,
-  ChevronRight,
-  FileText,
-  Sun,
-  Leaf,
-  Snowflake,
-} from "lucide-react";
+import { ArrowLeft, BookOpen, Calendar, ChevronRight, FileText } from "lucide-react";
 import { useSupabase } from "@/components/providers/SupabaseProvider";
 import { Card, Badge } from "@/components/ui/Card";
 
@@ -27,12 +18,11 @@ type QuizRow = {
   mark_scheme?: string | null;
   num?: string | null;
   year?: string | null;
-  season_id?: number | null;
-  paper?: string | null;
-  season?: { name?: string | null } | null;
+  image_url?: string | null;
 };
 
 type LookupRow = { id: number; name: string | null };
+type PaperRow = { id: number; name: string };
 
 const subjectColors = [
   "from-violet-500 to-fuchsia-500",
@@ -42,21 +32,6 @@ const subjectColors = [
   "from-rose-500 to-pink-500",
   "from-lime-500 to-emerald-500",
 ];
-
-function seasonIcon(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes("may") || lower.includes("jun")) return Sun;
-  if (lower.includes("oct") || lower.includes("nov")) return Leaf;
-  return Snowflake;
-}
-
-function seasonSortKey(name: string) {
-  const lower = name.toLowerCase();
-  if (lower.includes("mar")) return 0;
-  if (lower.includes("may") || lower.includes("jun")) return 1;
-  if (lower.includes("oct") || lower.includes("nov")) return 2;
-  return 3;
-}
 
 function HtmlBlock({ html }: { html: string | null }) {
   if (!html) return <p className="text-sm font-semibold text-ink-soft">No content provided.</p>;
@@ -113,7 +88,8 @@ function HtmlBlock({ html }: { html: string | null }) {
           padding: 0.5rem 0.75rem;
         }
         .quiz-html img {
-          max-width: 100%;
+          max-width: min(100%, 360px);
+          width: 100%;
           height: auto;
           border-radius: 0.5rem;
         }
@@ -137,13 +113,12 @@ export default function StudentPastPaperPage() {
   const [selectedSubjectName, setSelectedSubjectName] = useState<string>("");
 
   const [years, setYears] = useState<Option[]>([]);
-  const [seasons, setSeasons] = useState<Option[]>([]);
-  const [papers, setPapers] = useState<Option[]>([]);
   const [lookupsLoading, setLookupsLoading] = useState(true);
 
+  const [papers, setPapers] = useState<Option[]>([]);
+  const [papersLoading, setPapersLoading] = useState(true);
+
   const [selectedYear, setSelectedYear] = useState<string>("");
-  const [selectedSeason, setSelectedSeason] = useState<string>("");
-  const [selectedSeasonName, setSelectedSeasonName] = useState<string>("");
   const [selectedPaper, setSelectedPaper] = useState<string>("");
 
   const [quizzes, setQuizzes] = useState<QuizRow[]>([]);
@@ -152,6 +127,15 @@ export default function StudentPastPaperPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedChoice, setSelectedChoice] = useState<string | null>(null);
   const [showAnswer, setShowAnswer] = useState(false);
+
+  useEffect(() => {
+    const storedId = typeof window !== "undefined" ? localStorage.getItem("subject_id") : null;
+    const storedLabel = typeof window !== "undefined" ? localStorage.getItem("subject_label") : null;
+    if (storedId) {
+      setSelectedSubject(storedId);
+      if (storedLabel) setSelectedSubjectName(storedLabel);
+    }
+  }, []);
 
   useEffect(() => {
     const loadSubjects = async () => {
@@ -170,11 +154,7 @@ export default function StudentPastPaperPage() {
   useEffect(() => {
     const loadLookups = async () => {
       setLookupsLoading(true);
-      const [{ data: yearData }, { data: seasonData }, { data: paperData }] = await Promise.all([
-        supabase.from("year").select("id, name"),
-        supabase.from("season").select("id, name"),
-        supabase.from("paper").select("id, name"),
-      ]);
+      const { data: yearData } = await supabase.from("year").select("id, name");
 
       const yearRows = (yearData as LookupRow[]) ?? [];
       setYears(
@@ -183,27 +163,38 @@ export default function StudentPastPaperPage() {
           .sort((a, b) => b.label.localeCompare(a.label, undefined, { numeric: true })),
       );
 
-      const seasonRows = (seasonData as LookupRow[]) ?? [];
-      setSeasons(
-        seasonRows
-          .map((s) => ({ label: s.name ?? String(s.id), value: String(s.id) }))
-          .sort((a, b) => seasonSortKey(a.label) - seasonSortKey(b.label)),
-      );
-
-      const paperRows = (paperData as LookupRow[]) ?? [];
-      setPapers(
-        paperRows
-          .map((p) => ({ label: p.name ?? String(p.id), value: p.name ?? String(p.id) }))
-          .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })),
-      );
-
       setLookupsLoading(false);
     };
     void loadLookups();
   }, [supabase]);
 
   useEffect(() => {
-    if (!selectedSubject || !selectedYear || !selectedSeason || !selectedPaper) return;
+    if (!selectedSubject) {
+      setPapers([]);
+      return;
+    }
+    let isMounted = true;
+    const loadPapers = async () => {
+      setPapersLoading(true);
+      const { data } = await supabase.from("subject_paper").select("id, name").eq("subject_id", Number(selectedSubject));
+      if (!isMounted) return;
+      const paperRows = (data as PaperRow[]) ?? [];
+      const uniqueNames = Array.from(new Set(paperRows.map((p) => p.name)));
+      setPapers(
+        uniqueNames
+          .map((name) => ({ label: name, value: name }))
+          .sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })),
+      );
+      setPapersLoading(false);
+    };
+    void loadPapers();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedSubject, supabase]);
+
+  useEffect(() => {
+    if (!selectedSubject || !selectedYear || !selectedPaper) return;
     let isMounted = true;
 
     const loadQuizzes = async () => {
@@ -214,16 +205,22 @@ export default function StudentPastPaperPage() {
 
       const { data, error: quizError } = await supabase
         .from("quiz")
-        .select("id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year, season_id, paper, season:season_id(name)")
+        .select("id, subject_id, question, mcq1, mcq2, mcq3, mcq4, mcq_answer, mark_scheme, num, year, image_url")
         .eq("subject_id", Number(selectedSubject))
+        .eq("type", "mcq")
         .eq("year", selectedYear)
-        .eq("season_id", Number(selectedSeason))
-        .eq("paper", selectedPaper)
-        .order("num", { ascending: true, nullsFirst: true });
+        .eq("paper", selectedPaper);
 
       if (!isMounted) return;
       if (quizError) setError(quizError.message);
-      setQuizzes((data as QuizRow[]) ?? []);
+      const rows = (data as QuizRow[]) ?? [];
+      rows.sort((a, b) => {
+        const numA = Number(a.num);
+        const numB = Number(b.num);
+        if (Number.isNaN(numA) || Number.isNaN(numB)) return (a.num ?? "").localeCompare(b.num ?? "", undefined, { numeric: true });
+        return numA - numB;
+      });
+      setQuizzes(rows);
       setCurrentIndex(0);
       setLoading(false);
     };
@@ -232,7 +229,7 @@ export default function StudentPastPaperPage() {
     return () => {
       isMounted = false;
     };
-  }, [selectedSubject, selectedYear, selectedSeason, selectedPaper, supabase]);
+  }, [selectedSubject, selectedYear, selectedPaper, supabase]);
 
   const currentQuiz = quizzes[currentIndex];
   const answerOptions = currentQuiz
@@ -248,27 +245,24 @@ export default function StudentPastPaperPage() {
     setSelectedSubject(value);
     setSelectedSubjectName(label);
     setSelectedYear("");
-    setSelectedSeason("");
-    setSelectedSeasonName("");
     setSelectedPaper("");
   };
 
   const crumbs: { label: string; onClick: () => void }[] = [
     { label: "Past Papers", onClick: () => pickSubject("", "") },
   ];
-  if (selectedSubject) crumbs.push({ label: selectedSubjectName, onClick: () => { setSelectedYear(""); setSelectedSeason(""); setSelectedPaper(""); } });
-  if (selectedYear) crumbs.push({ label: selectedYear, onClick: () => { setSelectedSeason(""); setSelectedPaper(""); } });
-  if (selectedSeason) crumbs.push({ label: selectedSeasonName, onClick: () => setSelectedPaper("") });
+  if (selectedSubject) crumbs.push({ label: selectedSubjectName, onClick: () => { setSelectedYear(""); setSelectedPaper(""); } });
+  if (selectedYear) crumbs.push({ label: selectedYear, onClick: () => setSelectedPaper("") });
   if (selectedPaper) crumbs.push({ label: `Paper ${selectedPaper}`, onClick: () => {} });
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
+    <div className="space-y-4">
+      <div className="space-y-1">
         <Badge color="teal">
-          <BookOpen className="h-3.5 w-3.5" /> Past Papers
+          <BookOpen className="h-3 w-3" /> Past Papers
         </Badge>
-        <h1 className="font-heading text-3xl font-extrabold text-ink">Every subject. Every year. Every session.</h1>
-        <p className="text-sm font-semibold text-ink-soft">Pick a subject, then drill down to the exact paper you need.</p>
+        <h1 className="font-heading text-xl font-extrabold text-ink">Every subject. Every year. Every session.</h1>
+        <p className="text-xs font-semibold text-ink-soft">Pick a subject, then drill down to the exact paper you need.</p>
       </div>
 
       {crumbs.length > 1 ? (
@@ -338,59 +332,42 @@ export default function StudentPastPaperPage() {
             </div>
           )}
         </Card>
-      ) : !selectedSeason ? (
-        <Card className="p-6">
-          <p className="mb-4 text-sm font-bold text-ink-soft">Choose a session for {selectedYear}</p>
-          <div className="flex flex-wrap gap-3">
-            {seasons.map((s) => {
-              const Icon = seasonIcon(s.label);
-              return (
-                <button
-                  key={s.value}
-                  type="button"
-                  onClick={() => {
-                    setSelectedSeason(s.value);
-                    setSelectedSeasonName(s.label);
-                  }}
-                  className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50"
-                >
-                  <Icon className="h-5 w-5 text-orange-500" />
-                  <span className="font-heading font-bold text-ink">{s.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </Card>
       ) : !selectedPaper ? (
         <Card className="p-6">
-          <p className="mb-4 text-sm font-bold text-ink-soft">Choose a paper for {selectedYear} &middot; {selectedSeasonName}</p>
-          <div className="flex flex-wrap gap-3">
-            {papers.map((p) => (
-              <button
-                key={p.value}
-                type="button"
-                onClick={() => setSelectedPaper(p.value)}
-                className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50"
-              >
-                <FileText className="h-5 w-5 text-teal-600" />
-                <span className="font-heading font-bold text-ink">Paper {p.label}</span>
-              </button>
-            ))}
-          </div>
+          <p className="mb-4 text-sm font-bold text-ink-soft">Choose a paper for {selectedYear}</p>
+          {papersLoading ? (
+            <p className="text-sm font-semibold text-ink-soft">Loading papers…</p>
+          ) : papers.length === 0 ? (
+            <p className="text-sm font-semibold text-ink-soft">No papers configured for this subject yet.</p>
+          ) : (
+            <div className="flex flex-wrap gap-3">
+              {papers.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setSelectedPaper(p.value)}
+                  className="flex items-center gap-2.5 rounded-2xl border-2 border-subtle bg-surface px-5 py-3 shadow-sm transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-teal-50"
+                >
+                  <FileText className="h-5 w-5 text-teal-600" />
+                  <span className="font-heading font-bold text-ink">Paper {p.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </Card>
       ) : (
         <div className="space-y-4">
-          <Card className="p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          <Card className="p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h2 className="font-heading text-xl font-extrabold text-ink">
-                  {selectedSubjectName} &middot; {selectedYear} &middot; {selectedSeasonName} &middot; Paper {selectedPaper}
+                <h2 className="font-heading text-sm font-extrabold text-ink">
+                  {selectedSubjectName} &middot; {selectedYear} &middot; Paper {selectedPaper}
                 </h2>
-                <p className="text-sm font-semibold text-ink-soft">
+                <p className="text-xs font-semibold text-ink-soft">
                   {loading ? "Loading questions…" : `${quizzes.length} question${quizzes.length === 1 ? "" : "s"} in this paper.`}
                 </p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <button
                   type="button"
                   onClick={() => {
@@ -399,7 +376,7 @@ export default function StudentPastPaperPage() {
                     setCurrentIndex((idx) => Math.max(0, idx - 1));
                   }}
                   disabled={currentIndex === 0 || quizzes.length === 0}
-                  className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
+                  className="rounded-full border-2 border-subtle bg-surface px-3 py-1 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
                 >
                   Prev
                 </button>
@@ -411,7 +388,7 @@ export default function StudentPastPaperPage() {
                     setCurrentIndex((idx) => Math.min(quizzes.length - 1, idx + 1));
                   }}
                   disabled={currentIndex >= quizzes.length - 1 || quizzes.length === 0}
-                  className="rounded-full border-2 border-subtle bg-surface px-4 py-2 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
+                  className="rounded-full border-2 border-subtle bg-surface px-3 py-1 text-xs font-bold text-ink shadow-sm transition hover:bg-subtle/40 disabled:opacity-40"
                 >
                   Next
                 </button>
@@ -423,7 +400,7 @@ export default function StudentPastPaperPage() {
           </Card>
 
           {!loading && quizzes.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
               {quizzes.map((q, i) => (
                 <button
                   key={q.id}
@@ -433,7 +410,7 @@ export default function StudentPastPaperPage() {
                     setShowAnswer(false);
                     setCurrentIndex(i);
                   }}
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-2 text-xs font-extrabold shadow-sm transition ${
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-extrabold shadow-sm transition ${
                     i === currentIndex
                       ? "border-violet-500 bg-violet-500 text-white"
                       : "border-subtle bg-surface text-ink hover:border-violet-300"
@@ -451,47 +428,91 @@ export default function StudentPastPaperPage() {
             <Card className="p-6 text-center text-sm font-semibold text-ink-soft">No questions found for this paper yet.</Card>
           ) : (
             <>
-              <Card className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Question</p>
-                    <h3 className="font-heading text-lg font-bold text-ink">{`Q${currentIndex + 1}`}</h3>
+              {currentQuiz.question ? (
+                <Card className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Question</p>
+                      <h3 className="font-heading text-lg font-bold text-ink">{`Q${currentIndex + 1}`}</h3>
+                    </div>
+                    {currentQuiz.mcq_answer && showAnswer ? (
+                      <Badge color="teal">Correct: {currentQuiz.mcq_answer}</Badge>
+                    ) : null}
                   </div>
-                  {currentQuiz.mcq_answer && showAnswer ? (
-                    <Badge color="teal">Correct: {currentQuiz.mcq_answer}</Badge>
-                  ) : null}
-                </div>
-                <div className="mt-3">
-                  <HtmlBlock html={currentQuiz.question} />
-                </div>
-              </Card>
+                  <div className="mt-3">
+                    <HtmlBlock html={currentQuiz.question} />
+                  </div>
+                </Card>
+              ) : (
+                <Card className="p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-extrabold uppercase tracking-wide text-violet-600">Question</p>
+                      <h3 className="font-heading text-lg font-bold text-ink">{`Q${currentIndex + 1}`}</h3>
+                    </div>
+                    {currentQuiz.mcq_answer && showAnswer ? (
+                      <Badge color="teal">Correct: {currentQuiz.mcq_answer}</Badge>
+                    ) : null}
+                  </div>
+                  <div className="mt-3">
+                    {currentQuiz.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={currentQuiz.image_url} alt="Question" className="w-full object-contain" />
+                    ) : (
+                      <p className="text-sm font-semibold text-ink-soft">No content provided.</p>
+                    )}
+                  </div>
+                </Card>
+              )}
 
               <Card className="p-5">
                 <p className="text-xs font-extrabold uppercase tracking-wide text-ink-soft">Options</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {answerOptions.map((opt) => {
-                    const isSelected = selectedChoice === opt.label;
-                    const isCorrect = currentQuiz.mcq_answer?.trim().toUpperCase() === opt.label;
-                    const showCorrect = (showAnswer && isCorrect) || (isSelected && isCorrect);
-                    const border = isSelected ? (showCorrect ? "border-emerald-400" : "border-amber-400") : "border-subtle";
-                    const bg = isSelected ? (showCorrect ? "bg-emerald-50" : "bg-amber-50") : "bg-surface";
-                    return (
-                      <button
-                        key={opt.label}
-                        type="button"
-                        onClick={() => setSelectedChoice(opt.label)}
-                        className={`flex items-start gap-3 rounded-2xl border-2 px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${border} ${bg}`}
-                      >
-                        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-extrabold text-violet-700">
+                {answerOptions.some((opt) => opt.value) ? (
+                  <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {answerOptions.map((opt) => {
+                      const isSelected = selectedChoice === opt.label;
+                      const isCorrect = currentQuiz.mcq_answer?.trim().toUpperCase() === opt.label;
+                      const showCorrect = (showAnswer && isCorrect) || (isSelected && isCorrect);
+                      const border = isSelected ? (showCorrect ? "border-emerald-400" : "border-amber-400") : "border-subtle";
+                      const bg = isSelected ? (showCorrect ? "bg-emerald-50" : "bg-amber-50") : "bg-surface";
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => setSelectedChoice(opt.label)}
+                          className={`flex items-start gap-3 rounded-2xl border-2 px-3 py-3 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${border} ${bg}`}
+                        >
+                          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-violet-100 text-sm font-extrabold text-violet-700">
+                            {opt.label}
+                          </span>
+                          <div className="flex-1 text-sm text-ink">
+                            <HtmlBlock html={opt.value} />
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {answerOptions.map((opt) => {
+                      const isSelected = selectedChoice === opt.label;
+                      const isCorrect = currentQuiz.mcq_answer?.trim().toUpperCase() === opt.label;
+                      const showCorrect = (showAnswer && isCorrect) || (isSelected && isCorrect);
+                      const border = isSelected ? (showCorrect ? "border-emerald-400" : "border-amber-400") : "border-subtle";
+                      const bg = isSelected ? (showCorrect ? "bg-emerald-50" : "bg-amber-50") : "bg-surface";
+                      return (
+                        <button
+                          key={opt.label}
+                          type="button"
+                          onClick={() => setSelectedChoice(opt.label)}
+                          className={`flex h-9 w-9 items-center justify-center rounded-full border-2 text-sm font-extrabold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${border} ${bg} text-violet-700`}
+                        >
                           {opt.label}
-                        </span>
-                        <div className="flex-1 text-sm text-ink">
-                          <HtmlBlock html={opt.value} />
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </Card>
 
               {currentQuiz.mark_scheme ? (
@@ -523,7 +544,6 @@ export default function StudentPastPaperPage() {
           type="button"
           onClick={() => {
             if (selectedPaper) setSelectedPaper("");
-            else if (selectedSeason) setSelectedSeason("");
             else if (selectedYear) setSelectedYear("");
             else pickSubject("", "");
           }}

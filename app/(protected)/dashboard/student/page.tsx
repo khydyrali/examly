@@ -127,7 +127,7 @@ export default function StudentDashboardPage() {
         ) : subjects.length === 0 ? (
           <Card className="p-6 text-sm font-semibold text-ink-soft">{t.studentHome.noSubjects}</Card>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {subjects.map((subject, i) => {
               const Icon = getSubjectIcon(subject.name);
               const color = subjectColors[i % subjectColors.length];
@@ -136,10 +136,9 @@ export default function StudentDashboardPage() {
                   key={subject.id}
                   type="button"
                   onClick={() => handleSelectSubject(subject)}
-                  className={`group relative overflow-hidden rounded-3xl bg-gradient-to-br ${color} p-5 text-left text-white shadow-pop transition hover:-translate-y-1.5 hover:rotate-1 hover:shadow-xl`}
+                  className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${color} p-3.5 text-left text-white shadow-pop transition hover:-translate-y-1 hover:shadow-xl`}
                 >
-                  <div className="pointer-events-none absolute -right-6 -top-8 h-28 w-28 rounded-full bg-white/15 blur-2xl transition group-hover:bg-white/25" />
-                  <div className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10 blur-2xl" />
+                  <div className="pointer-events-none absolute -right-4 -top-6 h-16 w-16 rounded-full bg-white/15 blur-xl transition group-hover:bg-white/25" />
 
                   <div className="relative flex items-start justify-between">
                     {subject.image ? (
@@ -147,21 +146,21 @@ export default function StudentDashboardPage() {
                       <img
                         src={subject.image}
                         alt={subject.name ?? "Subject image"}
-                        className="h-14 w-14 rounded-2xl border-2 border-white/40 object-cover shadow-sm"
+                        className="h-9 w-9 rounded-xl border-2 border-white/40 object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/20 shadow-sm backdrop-blur-sm">
-                        <Icon className="h-7 w-7 text-white" />
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 shadow-sm backdrop-blur-sm">
+                        <Icon className="h-4 w-4 text-white" />
                       </div>
                     )}
-                    <span className="rounded-full bg-white/20 px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wide backdrop-blur-sm">
+                    <span className="rounded-full bg-white/20 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide backdrop-blur-sm">
                       {subject.code || "SUB"}
                     </span>
                   </div>
 
-                  <div className="relative mt-5 space-y-1">
-                    <p className="font-heading text-lg font-extrabold leading-tight">{subject.name || `Subject ${subject.id}`}</p>
-                    <p className="text-xs font-bold text-white/80">{t.studentHome.tapToStart}</p>
+                  <div className="relative mt-2.5 space-y-0.5">
+                    <p className="font-heading text-sm font-extrabold leading-tight">{subject.name || `Subject ${subject.id}`}</p>
+                    <p className="text-[10px] font-bold text-white/80">{t.studentHome.tapToStart}</p>
                   </div>
                 </button>
               );

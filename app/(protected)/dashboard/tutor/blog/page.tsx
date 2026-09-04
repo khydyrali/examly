@@ -87,7 +87,7 @@ export default function TutorBlogManagePage() {
   const uploadCoverImage = async (file: File) => {
     setUploading(true);
     const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
-    const { data, error: uploadError } = await supabase.storage.from("public").upload(`blog-covers/${filename}`, file, {
+    const { data, error: uploadError } = await supabase.storage.from("main").upload(`blog-covers/${filename}`, file, {
       cacheControl: "3600",
       upsert: false,
     });
@@ -96,7 +96,7 @@ export default function TutorBlogManagePage() {
       setUploading(false);
       return;
     }
-    const { data: publicData } = supabase.storage.from("public").getPublicUrl(data.path);
+    const { data: publicData } = supabase.storage.from("main").getPublicUrl(data.path);
     setForm((prev) => ({ ...prev, coverImage: publicData?.publicUrl ?? "" }));
     setUploading(false);
   };
@@ -104,12 +104,12 @@ export default function TutorBlogManagePage() {
   const handleUploadInlineImage = useCallback(
     async (file: File) => {
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
-      const { data, error: uploadError } = await supabase.storage.from("public").upload(`richtext/${filename}`, file, {
+      const { data, error: uploadError } = await supabase.storage.from("main").upload(`richtext/${filename}`, file, {
         cacheControl: "3600",
         upsert: false,
       });
       if (uploadError) return null;
-      const { data: publicData } = supabase.storage.from("public").getPublicUrl(data.path);
+      const { data: publicData } = supabase.storage.from("main").getPublicUrl(data.path);
       return publicData?.publicUrl ?? null;
     },
     [supabase],

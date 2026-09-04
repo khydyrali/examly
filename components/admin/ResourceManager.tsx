@@ -275,7 +275,7 @@ export function ResourceManager({
   const handleUploadImage = useCallback(
     async (file: File) => {
       const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}-${file.name}`;
-      const { data, error: uploadError } = await supabase.storage.from('public').upload(`richtext/${filename}`, file, {
+      const { data, error: uploadError } = await supabase.storage.from('main').upload(`richtext/${filename}`, file, {
         cacheControl: '3600',
         upsert: false,
       });
@@ -283,7 +283,7 @@ export function ResourceManager({
         setError(uploadError.message);
         return null;
       }
-      const { data: publicData } = supabase.storage.from('public').getPublicUrl(data.path);
+      const { data: publicData } = supabase.storage.from('main').getPublicUrl(data.path);
       return publicData?.publicUrl ?? null;
     },
     [supabase],
